@@ -1,0 +1,1394 @@
+########################################################################################################################
+# Primary author:     Aaron Anderson, National Wildlife Research Center
+# Contact:            aaron.m.anderson@aphis.usda.gov
+# Other contributors: Johan Kotze, Brody Hatch, Jordan Navin
+# Description:        This code is the backend of a web app that can be used
+#                     to forecast the results of canine rabies management
+#                     in South Africa
+########################################################################################################################
+
+########################################################################################################################
+# Note to user: install the following five packages:
+#               shiny, ggplot2, gridExtra, gtable, grid
+#               Do not install from with this script.
+
+# Load required packages:
+library(shiny)
+library(ggplot2)
+library(gridExtra)
+library(gtable)
+library(grid)
+########################################################################################################################
+
+########################################################################################################################
+# Define server logic:
+shinyServer(function(input, output, session) {
+
+observe({
+  # Move to graphical results tab when run button is pushed:
+  if (input$run > 0) {
+    updateTabsetPanel(session, 'mainTabs', selected = 'Model Output')
+  } else {
+    updateTabsetPanel(session, 'mainTabs', selected = 'Model Setup')
+  }
+})
+
+# Run model:
+getResultsMatrix <- eventReactive(input$run, {
+
+  ########################################
+  # Inputs:
+  
+  # Inputs for simulation:
+  simulationYears <- 5
+  iterations      <- input$iterations
+  
+  # Inputs for initial population:
+  initialPopSize    <- input$initialPopSize
+  initialFracAdult  <- input$initialFracAdult
+  initialFracPup    <- input$initialFracPup
+  initialFracFemale <- 0.38
+  initialFracImmune <- 0.0
+  initialFracContra <- 0.0
+  initialFracVacc   <- 0.0
+  initialFracSter   <- 0.0
+
+  # Inputs for mortality:
+  maxJuvAge          <- 299
+  maxPuppyAge        <- 89
+  maxAge             <- 4000
+  carryingCap        <- input$carryingCap
+  pupAnnMortProb     <- input$pupAnnMortProb
+  juvAnnMortProb     <- input$juvAnnMortProb
+  adultAnnMortProb   <- input$adultAnnMortProb
+  emigrationProb     <- input$emigrationProb
+  
+  # Inputs for reproduction:
+  immigrantDogs        <- input$immigrantDogs
+  expLitterPer         <- input$expectedLittersPerFemalePerYear
+  meanLitterSize       <- 4.4
+  femalePupProb        <- 0.38
+  fractionBirthPulse   <- input$fractionBirthPulse
+  birthPulseVector     <- rep(0, 12)
+  birthPulseVector[1]  <- !is.na(match('jan', input$birthPulseMonths)) 
+  birthPulseVector[2]  <- !is.na(match('feb', input$birthPulseMonths)) 
+  birthPulseVector[3]  <- !is.na(match('mar', input$birthPulseMonths)) 
+  birthPulseVector[4]  <- !is.na(match('apr', input$birthPulseMonths)) 
+  birthPulseVector[5]  <- !is.na(match('may', input$birthPulseMonths)) 
+  birthPulseVector[6]  <- !is.na(match('jun', input$birthPulseMonths)) 
+  birthPulseVector[7]  <- !is.na(match('jul', input$birthPulseMonths)) 
+  birthPulseVector[8]  <- !is.na(match('aug', input$birthPulseMonths)) 
+  birthPulseVector[9]  <- !is.na(match('sep', input$birthPulseMonths)) 
+  birthPulseVector[10] <- !is.na(match('oct', input$birthPulseMonths)) 
+  birthPulseVector[11] <- !is.na(match('nov', input$birthPulseMonths)) 
+  birthPulseVector[12] <- !is.na(match('dec', input$birthPulseMonths)) 
+  
+  # Inputs for disease:
+  monthsOfPressure      <- input$sequentialMonthsIntro
+  dogsPerMonthExposed   <- input$dogsPerIntro
+  monthInitIntroduction <- input$monthInitIntroduction
+  timeLimitExposed      <- 22 
+  timeLimitInfective    <- 3
+  survivalProb          <- 0
+  bitesPerRabidMean     <- input$transmissionParam
+  bitesPerRabidShape    <- 1.33
+  probInfectionFromBite <- 0.49
+
+  # Inputs for benefits of management:
+  bitesPerNonRabid     <- input$bitesPerNonRabid 
+  bitesPerRabid        <- input$bitesPerRabid 
+  PEPperNonRabidBite   <- input$PEPperNonRabidBite
+  PEPperRabidBite      <- input$PEPperRabidBite
+  costPerPEP           <- input$costPerPEP
+  lifeLossPerRabidBite <- input$lifeLossPerRabidBite
+
+  # Inputs for treatment costs:
+  vaccineCost             <- input$vaccineCost
+  contraceptionCostFemale <- input$contraceptionCostFemale
+  contraceptionCostMale   <- input$contraceptionCostMale
+  sterilizationCostFemale <- input$sterilizationCostFemale
+  sterilizationCostMale   <- input$sterilizationCostMale
+  euthanasiaCost          <- input$euthanasiaCost
+
+  # Inputs for effectiveness of contraception and vaccination:
+  timeVaccineEffective       <- input$timeVaccineEffective
+  timeBoosterEffective       <- input$timeBoosterEffective
+  timeContraEffectiveMales   <- input$timeContraEffectiveMales
+  timeContraEffectiveFemales <- input$timeContraEffectiveFemales
+
+  # Inputs for contact costs:
+  contactCost25 <- input$contactCost25
+  contactCost50 <- input$contactCost50
+  contactCost75 <- input$contactCost75
+  contactCost100 <- input$contactCost100
+
+  # Input for budget years 1-5:    
+  annualBudget     <- rep(0, 5)
+  annualBudget[1]  <- input$annualBudget1
+  annualBudget[2]  <- input$annualBudget2
+  annualBudget[3]  <- input$annualBudget3
+  annualBudget[4]  <- input$annualBudget4
+  annualBudget[5]  <- input$annualBudget5
+  
+  # Inputs for strategy:
+  vaccPuppyMale     <- !is.na(match('pm', input$vaccDemoInput))
+  vaccPuppyFemale   <- !is.na(match('pf', input$vaccDemoInput))
+  vaccAdultMale     <- !is.na(match('am', input$vaccDemoInput))  
+  vaccAdultFemale   <- !is.na(match('af', input$vaccDemoInput))
+  vaccJuvMale       <- !is.na(match('jm', input$vaccDemoInput))
+  vaccJuvFemale     <- !is.na(match('jf', input$vaccDemoInput))
+  contraPuppyMale   <- !is.na(match('pm', input$contraDemoInput))
+  contraPuppyFemale <- !is.na(match('pf', input$contraDemoInput))
+  contraAdultMale   <- !is.na(match('am', input$contraDemoInput))
+  contraAdultFemale <- !is.na(match('af', input$contraDemoInput))
+  contraJuvMale     <- !is.na(match('jm', input$contraDemoInput))
+  contraJuvFemale   <- !is.na(match('jf', input$contraDemoInput))
+  sterPuppyMale     <- !is.na(match('pm', input$sterDemoInput))
+  sterPuppyFemale   <- !is.na(match('pf', input$sterDemoInput))
+  sterAdultMale     <- !is.na(match('am', input$sterDemoInput))
+  sterAdultFemale   <- !is.na(match('af', input$sterDemoInput))
+  sterJuvMale       <- !is.na(match('jm', input$sterDemoInput))
+  sterJuvFemale     <- !is.na(match('jf', input$sterDemoInput))
+  euthPuppyMale     <- !is.na(match('pm', input$euthDemoInput))
+  euthPuppyFemale   <- !is.na(match('pf', input$euthDemoInput))
+  euthAdultMale     <- !is.na(match('am', input$euthDemoInput))
+  euthAdultFemale   <- !is.na(match('af', input$euthDemoInput))
+  euthJuvMale       <- !is.na(match('jm', input$euthDemoInput))
+  euthJuvFemale     <- !is.na(match('jf', input$euthDemoInput))
+  
+  boosterGiven <- input$boosterGiven
+  
+  # Inputs for management timing:
+  mgtMonthVector     <- rep(0, 12)
+  mgtMonthVector[1]  <- !is.na(match('jan', input$managementMonths)) 
+  mgtMonthVector[2]  <- !is.na(match('feb', input$managementMonths)) 
+  mgtMonthVector[3]  <- !is.na(match('mar', input$managementMonths)) 
+  mgtMonthVector[4]  <- !is.na(match('apr', input$managementMonths)) 
+  mgtMonthVector[5]  <- !is.na(match('may', input$managementMonths)) 
+  mgtMonthVector[6]  <- !is.na(match('jun', input$managementMonths)) 
+  mgtMonthVector[7]  <- !is.na(match('jul', input$managementMonths)) 
+  mgtMonthVector[8]  <- !is.na(match('aug', input$managementMonths)) 
+  mgtMonthVector[9]  <- !is.na(match('sep', input$managementMonths)) 
+  mgtMonthVector[10] <- !is.na(match('oct', input$managementMonths)) 
+  mgtMonthVector[11] <- !is.na(match('nov', input$managementMonths)) 
+  mgtMonthVector[12] <- !is.na(match('dec', input$managementMonths))
+  ########################################
+
+  ########################################
+  # Misc preliminary calculations and assignments:
+  
+  # Get total number of days in simulation:
+  simulationEnd   <- 365 * simulationYears
+  
+  # A vector of month number for use in seasonal timing:
+  monthSeries <- c(rep(1, 31), rep(2, 28), rep(3, 31), rep(4, 30), 
+                   rep(5, 31), rep(6, 30), rep(7, 31), rep(8, 31),
+                   rep(9, 30), rep(10, 31), rep(11, 30), rep(12, 31)) 
+  
+  monthFirstDays <- rep(c(match(1, monthSeries), match(2, monthSeries), match(3, monthSeries), match(4, monthSeries),
+                        match(5, monthSeries), match(6, monthSeries), match(7, monthSeries), match(8, monthSeries),
+                        match(9, monthSeries), match(10, monthSeries), match(11, monthSeries), match(12, monthSeries)),
+                        simulationYears)
+  
+  # Get days of each year that disease will be introduced:
+  pressureMonths <- seq(monthInitIntroduction, monthInitIntroduction + monthsOfPressure - 1)  
+  pressureYears <- (pressureMonths - 1) %/% 12 + 1
+  pressureDays <- list()
+  for (i in 1:simulationYears) {
+    if (sum(pressureYears == i) > 0) {
+      pressureDays[[i]] <- monthFirstDays[pressureMonths[pressureYears == i]]
+    } else {
+      pressureDays[[i]] <- 0
+    }
+  }
+  
+  # Calculate demographics of initial population:
+  initialAdults     <- round(initialFracAdult * initialPopSize)
+  initialSubAdults  <- initialPopSize - initialAdults
+  initialPuppies    <- round(initialFracPup * initialSubAdults)
+  initialJuveniles  <- initialSubAdults - initialPuppies
+  
+  # Calculate daily mortality probabilities:
+  pupMortalityProb   <- 1 - (1 - pupAnnMortProb) ^ (1/365)
+  juvMortalityProb   <- 1 - (1 - juvAnnMortProb) ^ (1/365)
+  adultMortalityProb <- 1 - (1 - adultAnnMortProb) ^ (1/365)
+  
+  # Calculate daily litter probabilities:
+  monthDayCount <- c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+  if(sum(birthPulseVector) != 12 & sum(birthPulseVector != 0)) {
+    peakDays <- sum(birthPulseVector * monthDayCount)
+    peakProb <- (fractionBirthPulse * expLitterPer) / peakDays
+    offPeakDays <- sum((!birthPulseVector) * monthDayCount)
+    offPeakProb <- ((1-fractionBirthPulse) * expLitterPer) / offPeakDays
+    litterProbability <- rep(offPeakProb, 365)
+    for(m in 1:12) {
+      if(birthPulseVector[m] == 1) {
+        litterProbability[monthSeries == m] <- peakProb
+      }
+    }
+  } else {
+    litterProbability <- rep(expLitterPer / 365, 365)
+  }
+  
+  # Calculate contact costs at carrying capacity:
+  contactCost25k <- contactCost25 * (carryingCap / initialPopSize)
+  contactCost50k <- contactCost50 * (carryingCap / initialPopSize)
+  contactCost75k <- contactCost75 * (carryingCap / initialPopSize)
+  contactCost100k <- contactCost100 * (carryingCap / initialPopSize)
+  contactCost25k  <- max(contactCost25k, 0) 
+  contactCost50k  <- max(contactCost50k, 0, contactCost25k)
+  contactCost75k  <- max(contactCost75k, 0, contactCost50k)
+  contactCost100k <- max(contactCost100k, 0, contactCost75k)
+  
+  # List days that management will occur:
+  mgtDayVector <- rep(0, 365)
+  for(m in 1:12) {
+    if(mgtMonthVector[m] == 1) {
+      mgtDayVector[monthSeries == m] <- 1
+    }
+  }
+  managementDays <- seq(1, 365)
+  managementDays <- managementDays[mgtDayVector == 1]
+  
+  # A list of traits in the population matrix:
+  traitList <- c('age', 'puppy', 'adult','female',
+                 'sterilized', 'contracepted', 'timeContra',
+                 'vaccinated', 'timeVacc',
+                 'boosted',
+                 'exposed', 'timeExposed',
+                 'infective', 'timeInfective',
+                 'immune', 'month')
+
+  # A list of results that will be tracked:
+  censusSeries <- c('abundance', 'puppy', 'adult', 'females', 
+                    'sterilized', 'femalesSterilized',
+                    'contracepted', 'femalesContracepted', 
+                    'vaccinated', 'immune', 'exposed', 'infective',
+                    'PEPs', 'lifeLoss', 'newlyVaccinated') 
+  censusVector <- rep(0, length(censusSeries))
+  names(censusVector) <- censusSeries
+
+  # Create a 3d array to store results:
+  resultsMatrix <- array(data=NA, dim=c(simulationEnd, length(censusSeries), iterations))
+  colnames(resultsMatrix) <- censusSeries
+
+  # Create a vector of binary strategy indicators:
+  strategyNames <- c('vaccPuppyMale', 'vaccPuppyFemale',
+                     'vaccAdultMale', 'vaccAdultFemale', 
+                     'vaccJuvMale', 'vaccJuvFemale',
+                     'contraPuppyMale', 'contraPuppyFemale',
+                     'contraAdultMale', 'contraAdultFemale',
+                     'contraJuvMale', 'contraJuvFemale',
+                     'sterPuppyMale', 'sterPuppyFemale',
+                     'sterAdultMale', 'sterAdultFemale', 
+                     'sterJuvMale', 'sterJuvFemale',
+                     'euthPuppyMale', 'euthPuppyFemale',
+                     'euthAdultMale', 'euthAdultFemale', 
+                     'euthJuvMale', 'euthJuvFemale') 
+  strategyVector <- c(vaccPuppyMale, vaccPuppyFemale,
+                      vaccAdultMale, vaccAdultFemale, 
+                      vaccJuvMale, vaccJuvFemale,
+                      contraPuppyMale, contraPuppyFemale,
+                      contraAdultMale, contraAdultFemale, 
+                      contraJuvMale, contraJuvFemale,
+                      sterPuppyMale, sterPuppyFemale,
+                      sterAdultMale, sterAdultFemale, 
+                      sterJuvMale, sterJuvFemale,
+                      euthPuppyMale, euthPuppyFemale,
+                      euthAdultMale, euthAdultFemale, 
+                      euthJuvMale, euthJuvFemale)
+  names(strategyVector) <- strategyNames
+  
+  # Create a cost vector to indicate unit cost of each strategy:
+  strategyCostVector <- c(rep(vaccineCost, 6),
+                          contraceptionCostMale, contraceptionCostFemale,
+                          contraceptionCostMale, contraceptionCostFemale, 
+                          contraceptionCostMale, contraceptionCostFemale,
+                          sterilizationCostMale, sterilizationCostFemale,
+                          sterilizationCostMale, sterilizationCostFemale, 
+                          sterilizationCostMale, sterilizationCostFemale,
+                          rep(euthanasiaCost, 6))
+  names(strategyCostVector) <- strategyNames
+  
+  # Create a mapping between cost and number of dogs contacted:
+  contactMapping <- c(seq(0.0, 0.25, length.out=(contactCost25k + 1)*10000),
+                      seq(0.25, 0.5, length.out=((contactCost50k - contactCost25k + 1)*10000))[-1],
+                      seq(0.5, 0.75, length.out=((contactCost75k - contactCost50k + 1)*10000))[-1],
+                      seq(0.75, 1.0, length.out=((contactCost100k - contactCost75k + 1)*10000))[-1])
+  
+  costSequence <- c(seq(0.0, contactCost25k, length.out=(contactCost25k + 1)*10000),
+                    seq(contactCost25k, contactCost50k, length.out=((contactCost50k - contactCost25k + 1)*10000))[-1],
+                    seq(contactCost50k, contactCost75k, length.out=((contactCost75k - contactCost50k + 1)*10000))[-1],
+                    seq(contactCost75k, contactCost100k, length.out=((contactCost100k - contactCost75k + 1)*10000))[-1])
+  ########################################
+
+  ########################################
+  InitialPopulation <- function() {
+    # Agruments: None.
+    # Return:    The population matrix.
+    # Purpose:   Construct the initial population matrix.
+    
+    popMatrix <- matrix(0, nrow=initialPopSize, ncol=length(traitList))
+    colnames(popMatrix) <- traitList                 
+    popMatrix[, 'age'] <- c(sample(seq(1, maxPuppyAge), initialPuppies, replace=TRUE),
+                            sample(seq(maxPuppyAge + 1, maxJuvAge), initialJuveniles, replace=TRUE),
+                            sample(seq(maxJuvAge + 1, maxAge), initialAdults, replace=TRUE))
+    popMatrix[, 'female'] <- sample(c(0, 1), initialPopSize, replace=TRUE, 
+                                    prob=c(1-initialFracFemale, initialFracFemale))
+    popMatrix[, 'contracepted'] <- sample(c(0, 1), initialPopSize, replace=TRUE, 
+                                          prob=c(1-initialFracContra, initialFracContra))
+    popMatrix[, 'sterilized'] <- sample(c(0, 1), initialPopSize, replace=TRUE, 
+                                        prob=c(1-initialFracSter, initialFracSter))
+    popMatrix[, 'vaccinated'] <- sample(c(0, 1), initialPopSize, replace=TRUE, 
+                                        prob=c(1-initialFracVacc, initialFracVacc))
+    popMatrix[, 'immune'] <- sample(c(0, 1), initialPopSize, replace=TRUE, 
+                                    prob=c(1-initialFracImmune, initialFracImmune))
+    popMatrix[popMatrix[, 'contracepted']==1, 'timeContra'] <- 
+      vapply(popMatrix[popMatrix[, 'contracepted']==1, 'age'], sample, size=1, FUN.VALUE=0) 
+    popMatrix[popMatrix[, 'vaccinated']==1, 'timeVacc'] <- 
+      vapply(popMatrix[popMatrix[, 'vaccinated']==1, 'age'], sample, size=1, FUN.VALUE=0)
+    popMatrix[popMatrix[, 'age'] > maxJuvAge, 'adult'] <- 1
+    popMatrix[popMatrix[, 'age'] <= maxPuppyAge, 'puppy'] <- 1
+    popMatrix[, 'month'] <- 1
+    
+    return(popMatrix)
+  }
+  ########################################
+
+  ########################################
+  TotalCost <- function(k, dogDemoForStrategies) {
+    # Arguments: Money allocated to contact or capture, number of dogs available for each strategy.
+    # Return:    The total cost including contact or capture and treatment costs.
+    # Purpose:   Calculates the total cost of management for a given year given the amount devoted to contact or 
+    #            capture and current demographics.
+    
+    currentAbundance <- nrow(popMatrix)
+    contactAllocation <- costSequence[k]
+    
+    # adjust contact cost for current population relative to k
+    dogsContacted = contactMapping[k] * currentAbundance
+    adjAllocation = contactAllocation * (currentAbundance / carryingCap)
+    
+    demoOfContacted <- dogsContacted * pmax((dogDemoForStrategies / nrow(popMatrix)),  0, na.rm=TRUE)
+    totalCost <- adjAllocation + sum(demoOfContacted * strategyCostVector * strategyVector)
+    
+    return(totalCost)
+  }
+  ########################################
+  
+  ########################################
+  AnnualStrategy <- function() {
+    # Arguments: None.
+    # Return:    A vector of the number of dogs in each demographic category that receive each treament.
+    # Purpose:   At the start of each year, this function calculates the number of dogs that can be treated given costs, 
+    #            demographics, and the specified strategy.
+    
+    # Calc the expected demographics associated with each strategy choice:
+    currentAbundance   <- nrow(popMatrix)
+    pupFemalesUnster   <- sum(popMatrix[, 'female'] == 1 & popMatrix[, 'puppy'] == 1 & popMatrix[, 'sterilized'] == 0)
+    juvFemalesUnster   <- sum(popMatrix[, 'female'] == 1 & popMatrix[, 'adult'] == 0 &
+                              popMatrix[, 'puppy'] == 0 & popMatrix[, 'sterilized'] == 0)
+    adultFemalesUnster <- sum(popMatrix[, 'female'] == 1 & popMatrix[, 'adult'] == 1 & popMatrix[, 'sterilized'] == 0)
+    pupMalesUnster     <- sum(popMatrix[, 'female'] == 0 & popMatrix[, 'puppy'] == 1 & popMatrix[, 'sterilized'] == 0)
+    juvMalesUnster     <- sum(popMatrix[, 'female'] == 0 & popMatrix[, 'adult'] == 0 &
+                              popMatrix[, 'puppy'] == 0 &popMatrix[, 'sterilized'] == 0)
+    adultMalesUnster   <- sum(popMatrix[, 'female'] == 0 & popMatrix[, 'adult'] == 1 & popMatrix[, 'sterilized'] == 0)
+    pupFemalesSter     <- sum(popMatrix[, 'female'] == 1 & popMatrix[, 'puppy'] == 1 & popMatrix[, 'sterilized'] == 1)
+    juvFemalesSter     <- sum(popMatrix[, 'female'] == 1 & popMatrix[, 'adult'] == 0 &
+                              popMatrix[, 'puppy'] == 0 & popMatrix[, 'sterilized'] == 1)
+    adultFemalesSter   <- sum(popMatrix[, 'female'] == 1 & popMatrix[, 'adult'] == 1 & popMatrix[, 'sterilized'] == 1)
+    pupMalesSter       <- sum(popMatrix[, 'female'] == 0 & popMatrix[, 'puppy'] == 1 & popMatrix[, 'sterilized'] == 1)
+    juvMalesSter       <- sum(popMatrix[, 'female'] == 0 & popMatrix[, 'adult'] == 0 &
+                              popMatrix[, 'puppy'] == 0 & popMatrix[, 'sterilized'] == 1)
+    adultMalesSter     <- sum(popMatrix[, 'female'] == 0 & popMatrix[, 'adult'] == 1 & popMatrix[, 'sterilized'] == 1)
+    dogDemoForStrategies <- c(pupMalesUnster + pupMalesSter,
+                              pupFemalesUnster + pupFemalesSter,
+                              adultMalesUnster + adultMalesSter,
+                              adultFemalesUnster + adultFemalesSter,
+                              juvMalesUnster + juvMalesSter,
+                              juvFemalesUnster + juvFemalesSter,
+                              pupMalesUnster, pupFemalesUnster,
+                              adultMalesUnster, adultFemalesUnster, 
+                              juvMalesUnster, juvFemalesUnster,
+                              pupMalesUnster, pupFemalesUnster,
+                              adultMalesUnster, adultFemalesUnster, 
+                              juvMalesUnster, juvFemalesUnster,
+                              pupMalesUnster + pupMalesSter,
+                              pupFemalesUnster + pupFemalesSter,
+                              adultMalesUnster + adultMalesSter,
+                              adultFemalesUnster + adultMalesSter,
+                              juvMalesUnster + juvMalesSter,
+                              juvFemalesUnster + juvFemalesSter)
+    names(dogDemoForStrategies) <- strategyNames
+    
+    # The following section of code determines how the annual budget is split between contacting/capturing dogs and 
+    # treating them. It begins by allocating the entire budget to capture. Then it calculates the total cost of this 
+    # given the treatment options that have been specified. If the total cost exceeds the available budget, it decreases 
+    # the allocation to contact/capture and repeats the calculation. This process continues until the total cost is less 
+    # than (or equal to) the total annual budget.
+    
+    if(annualBudget[j] > 0) {
+      k <- length(costSequence)
+      totalCost <- annualBudget[j] + 1
+      while(totalCost > annualBudget[j]) {
+        allocation <- costSequence[k]
+        totalCost <- TotalCost(k, dogDemoForStrategies)
+        k <- k - 1
+      }
+      contactAllocation <- costSequence[k + 1]
+      # adjust contact cost for current population relative to k
+      dogsContacted <- contactMapping[k + 1] * currentAbundance
+      demoOfContacted <- dogsContacted * pmax((dogDemoForStrategies / nrow(popMatrix)), 0, na.rm=TRUE)
+      strategyResults <- demoOfContacted * strategyVector
+      
+    } else {
+      strategyResults = dogDemoForStrategies * 0
+    }
+    
+    return(strategyResults) 
+  }
+  ########################################
+
+  ########################################
+  MortalityFunction <- function() {
+    # Arguments: None.
+    # Return:    An updated population matrix.
+    # Purpose:   Induces out-migration, probabilistic mortality,
+    #            old-age mortality, and censors population to carrying capacity.
+    
+    # Induce out-migration:
+    emigDraw  <- runif(nrow(popMatrix))
+    popMatrix <- popMatrix[emigDraw > emigrationProb, , drop=FALSE]
+    
+    # Induce mortality:
+    n <- nrow(popMatrix)
+    mortProbVector <- rep(adultMortalityProb, n)
+    mortProbVector[popMatrix[, 'age'] <= maxJuvAge]  <- juvMortalityProb
+    mortProbVector[popMatrix[, 'age'] <= maxPuppyAge] <- pupMortalityProb
+    mortDraw <- runif(n)
+    popMatrix <- popMatrix[mortDraw > mortProbVector, , drop=FALSE]
+    popMatrix <- popMatrix[maxAge > popMatrix[, 'age'], , drop=FALSE]
+    n <- nrow(popMatrix)
+    popMatrix <- popMatrix[sample(seq(1, n), min(carryingCap, n), replace=FALSE), , drop=FALSE]
+    
+    return(popMatrix)
+  }
+  ########################################
+  
+  ########################################
+  ReproductionFunction <- function(d) {
+    # Arguments: Day of the year.
+    # Return:    An updated population matrix.
+    # Purpose:   Induces reproduction and adds the new puppies to
+    #            the population.
+    
+    popMatrix[popMatrix[, 'age'] == (maxJuvAge + 1), 'adult'] <- 1
+    popMatrix[popMatrix[, 'age'] == (maxPuppyAge +1), 'puppy'] <- 0
+    fertFemales <- sum(popMatrix[, 'adult'] == 1 & 
+                       popMatrix[, 'female'] == 1 &
+                       popMatrix[, 'contracepted'] == 0 &
+                       popMatrix[, 'sterilized'] == 0 &
+                       (popMatrix[, 'exposed'] + popMatrix[, 'infective'] == 0 | 
+                        popMatrix[, 'immune'] == 1))
+    fertFemales <- max(0, fertFemales)
+    litterDraw <- runif(fertFemales)
+    puppies <- round(sum(litterDraw < litterProbability[d]) * meanLitterSize)
+    newDogMatrix <- matrix(0, nrow=puppies, ncol=length(traitList))
+    colnames(newDogMatrix) <- traitList
+    newDogMatrix[, 'female'] <- sample(c(0, 1), puppies, 
+                                       replace=TRUE, prob=c(1-femalePupProb, 
+                                                            femalePupProb))
+    newDogMatrix[, 'puppy'] <- 1
+    popMatrix <- rbind(popMatrix, newDogMatrix)
+    
+    return(popMatrix)
+  }
+  ########################################
+
+  ########################################
+  ImmigrationFunction <- function() {
+    # Arguments: None.
+    # Return:    An updated population matrix.
+    # Purpose:  Creates immigrant dogs and adds them to the population.
+    
+    # Calcuate number of new dogs to be added each day:
+    newDogCount <- immigrantDogs%/%365
+    probNewDog <- (immigrantDogs%%365) / 365
+    newDogCount <- newDogCount + (runif(1) < probNewDog)
+    
+    # Create and add new dogs:
+    newDogMatrix <- matrix(0, nrow=newDogCount, ncol=length(traitList))
+    colnames(newDogMatrix) <- traitList
+    newDogMatrix[, 'female'] <- sample(c(0, 1), newDogCount, 
+                                       replace=TRUE, 
+                                       prob=c(1-initialFracFemale, 
+                                              initialFracFemale))
+    newDogMatrix[, 'age'] <- sample(seq(0, maxAge), newDogCount, replace=TRUE)
+    newDogMatrix[newDogMatrix[, 'age'] > maxJuvAge, 'adult'] <- 1
+    newDogMatrix[newDogMatrix[, 'age'] <= maxPuppyAge, 'puppy'] <- 1
+    popMatrix <- rbind(popMatrix, newDogMatrix)
+    
+    return(popMatrix)
+  }
+  ########################################
+  
+  ########################################
+  DiseaseSpreadFunction <- function() {
+    # Arguments: None.
+    # Return:    An updated population matrix.
+    # Purpose:   Induces disease transmission, exogenous disease introduction.
+    
+    # Exogenous transmission:
+    if (d %in% pressureDays[[j]]) {
+      temp <- rep(0, nrow(popMatrix))
+      # Generate a vector of 0's and 1's that indicates which individuals are exposed:
+      temp[sample(seq(1, nrow(popMatrix)), dogsPerMonthExposed)] <- 1
+      # Change states if the individual can be moved to the exposed state:
+      newExposed <- temp == 1 & popMatrix[, 'infective'] == 0 & popMatrix[, 'exposed'] == 0 &
+                    popMatrix[, 'immune'] == 0 & popMatrix[, 'vaccinated'] == 0
+      popMatrix[newExposed, 'exposed']     <- 1
+      popMatrix[newExposed, 'timeExposed'] <- 0
+    }
+    
+    # Endogenous transmission:
+    infectiveDogs <- sum(popMatrix[, 'infective'])
+    dailyRabidBites <- sum(rnbinom(infectiveDogs, size=(bitesPerRabidShape/timeLimitInfective), 
+                                   mu=bitesPerRabidMean/timeLimitInfective))
+    # Now we draw dogs randomly from population to be bitten:
+    rowsBitten <- unique(sample(seq(1:nrow(popMatrix)), dailyRabidBites, replace=TRUE))
+    bitten <- rep(0, nrow(popMatrix))
+    bitten[rowsBitten] <- 1
+    infectionDraw <- runif(nrow(popMatrix))
+    # Treat dog as unbitten if did not actually aquire infection from bite:
+    bitten[infectionDraw > probInfectionFromBite] <- 0
+    # Take the dogs that received rabid bites and moved to exposed state if appropriate:
+    newExposed <- bitten == 1 & popMatrix[, 'infective'] == 0 & popMatrix[, 'exposed'] == 0 &
+                  popMatrix[, 'immune'] == 0 & popMatrix[, 'vaccinated'] == 0
+    popMatrix[newExposed, 'exposed']     <- 1
+    popMatrix[newExposed, 'timeExposed'] <- 0
+    
+    return(popMatrix)
+  } 
+  ########################################
+
+  ########################################
+  DiseaseProgressionFunction <- function() {
+    # Arguments: None.
+    # Return:    An updated population matrix.
+    # Purpose:   Induces transition from exposed and infective states.
+    
+    # Transition exposed to infective:
+    newInfective <- popMatrix[, 'exposed'] == 1 & popMatrix[, 'timeExposed'] > timeLimitExposed
+    popMatrix[newInfective, 'exposed']       <- 0
+    popMatrix[newInfective, 'infective']     <- 1
+    popMatrix[newInfective, 'timeInfective'] <- 0
+    
+    # Transition infective to death or immune:
+    newRecovered <- popMatrix[, 'infective'] == 1 & popMatrix[, 'timeInfective'] > timeLimitInfective
+    recoverDraw <- runif(length(newRecovered))
+    recover <- newRecovered[recoverDraw < survivalProb]
+    death <- newRecovered[recoverDraw >= survivalProb]
+    popMatrix[recover, 'infective'] <- 0
+    popMatrix[recover, 'immune']    <- 1
+    popMatrix <- popMatrix[!death, , drop=FALSE]
+    
+    return(popMatrix)
+  }
+  ########################################
+  
+  ########################################
+  CensusFunction <- function() {
+    # Arguments: None.
+    # Return: A vector of results.
+    # Purpose: Calculate results that are recorded daily.
+    
+    censusVector['abundance'] <- nrow(popMatrix)
+    censusVector['puppy'] <- sum(popMatrix[, 'age'] <= maxPuppyAge)
+    censusVector['adult'] <- sum(popMatrix[, 'age'] > maxJuvAge)
+    censusVector['females'] <- sum(popMatrix[, 'female'])
+    censusVector['sterilized'] <- sum(popMatrix[, 'sterilized'])
+    censusVector['femalesSterilized'] <- sum(popMatrix[, 'sterilized'] == 1 & popMatrix[, 'female'] == 1)
+    censusVector['contracepted'] <- sum(popMatrix[, 'sterilized'])
+    censusVector['femalesContracepted'] <- sum(popMatrix[, 'contracepted'] == 1 & 
+                                               popMatrix[, 'female'] == 1)
+    censusVector['vaccinated'] <- sum(popMatrix[, 'vaccinated'])
+    censusVector['immune'] <- sum(popMatrix[, 'immune'])
+    censusVector['exposed'] <- sum(popMatrix[, 'exposed'])
+    censusVector['infective'] <- sum(popMatrix[, 'infective'])
+    bitesNonRabid <- bitesPerNonRabid * (censusVector['abundance'] - censusVector['infective'])
+    bitesRabid <- bitesPerRabid * (censusVector['infective'])
+    censusVector['PEPs'] <- PEPperNonRabidBite * bitesNonRabid + PEPperRabidBite * bitesRabid
+    censusVector['lifeLoss'] <- lifeLossPerRabidBite * bitesRabid
+    
+    return(censusVector)
+  }
+  ########################################
+
+  ########################################
+  StrategySchedule <- function() {
+    # Arguments: None.
+    # Return:    A vector of the counts of each demographic group that will receive each treatment each day.
+    # Purpose:   On the first day of the year, this function determines the number of dogs in each demographic category 
+    #            that will receive each treatment.
+    
+    treatmentCount <- matrix(0, nrow=365, ncol=24)
+    colnames(treatmentCount) <- c('vaccPuppyMale', 'vaccPuppyFemale',
+                                  'vaccAdultMale', 'vaccAdultFemale', 
+                                  'vaccJuvMale', 'vaccJuvFemale',
+                                  'contraPuppyMale', 'contraPuppyFemale',
+                                  'contraAdultMale', 'contraAdultFemale',
+                                  'contraJuvMale', 'contraJuvFemale',
+                                  'sterPuppyMale', 'sterPuppyFemale',
+                                  'sterAdultMale', 'sterAdultFemale', 
+                                  'sterJuvMale', 'sterJuvFemale',
+                                  'euthPuppyMale', 'euthPuppyFemale',
+                                  'euthAdultMale', 'euthAdultFemale', 
+                                  'euthJuvMale', 'euthJuvFemale')
+    if(sum(mgtMonthVector) > 0) {
+      daysVaccPuppyMale     <- sample(managementDays, annualStrategy['vaccPuppyMale'], replace=TRUE)
+      treatmentCount[sort(unique(daysVaccPuppyMale)), 1]      <- table(daysVaccPuppyMale)
+      daysVaccPuppyFemale   <- sample(managementDays, annualStrategy['vaccPuppyFemale'], replace=TRUE)
+      treatmentCount[sort(unique(daysVaccPuppyFemale)), 2]    <- table(daysVaccPuppyFemale)
+      daysVaccAdultMale     <- sample(managementDays, annualStrategy['vaccAdultMale'], replace=TRUE)
+      treatmentCount[sort(unique(daysVaccAdultMale)), 3]      <- table(daysVaccAdultMale)
+      daysVaccAdultFemale   <- sample(managementDays, annualStrategy['vaccAdultFemale'], replace=TRUE)
+      treatmentCount[sort(unique(daysVaccAdultFemale)), 4]    <- table(daysVaccAdultFemale)
+      daysVaccJuvMale       <- sample(managementDays, annualStrategy['vaccJuvMale'], replace=TRUE)
+      treatmentCount[sort(unique(daysVaccJuvMale)), 5]        <- table(daysVaccJuvMale)
+      daysVaccJuvFemale     <- sample(managementDays, annualStrategy['vaccJuvFemale'], replace=TRUE)
+      treatmentCount[sort(unique(daysVaccJuvFemale)), 6]      <- table(daysVaccJuvFemale)
+      daysContraPuppyMale   <- sample(managementDays, annualStrategy['contraPuppyMale'], replace=TRUE)
+      treatmentCount[sort(unique(daysContraPuppyMale)), 7]    <- table(daysContraPuppyMale)
+      daysContraPuppyFemale <- sample(managementDays, annualStrategy['contraPuppyFemale'], replace=TRUE)
+      treatmentCount[sort(unique(daysContraPuppyFemale)), 8]  <- table(daysContraPuppyFemale)
+      daysContraAdultMale   <- sample(managementDays, annualStrategy['contraAdultMale'], replace=TRUE)
+      treatmentCount[sort(unique(daysContraAdultMale)), 9]    <- table(daysContraAdultMale)
+      daysContraAdultFemale <- sample(managementDays, annualStrategy['contraAdultFemale'], replace=TRUE)
+      treatmentCount[sort(unique(daysContraAdultFemale)), 10] <- table(daysContraAdultFemale)
+      daysContraJuvMale     <- sample(managementDays, annualStrategy['contraJuvMale'], replace=TRUE)
+      treatmentCount[sort(unique(daysContraJuvMale)), 11]     <- table(daysContraJuvMale)
+      daysContraJuvFemale   <- sample(managementDays, annualStrategy['contraJuvFemale'], replace=TRUE)
+      treatmentCount[sort(unique(daysContraJuvFemale)), 12]   <- table(daysContraJuvFemale)
+      daysSterPuppyMale     <- sample(managementDays, annualStrategy['sterPuppyMale'], replace=TRUE)
+      treatmentCount[sort(unique(daysSterPuppyMale)), 13]     <- table(daysSterPuppyMale)
+      daysSterPuppyFemale   <- sample(managementDays, annualStrategy['sterPuppyFemale'], replace=TRUE)
+      treatmentCount[sort(unique(daysSterPuppyFemale)), 14]   <- table(daysSterPuppyFemale)
+      daysSterAdultMale     <- sample(managementDays, annualStrategy['sterAdultMale'], replace=TRUE)
+      treatmentCount[sort(unique(daysSterAdultMale)), 15]     <- table(daysSterAdultMale)
+      daysSterAdultFemale   <- sample(managementDays, annualStrategy['sterAdultFemale'], replace=TRUE)
+      treatmentCount[sort(unique(daysSterAdultFemale)), 16]   <- table(daysSterAdultFemale)
+      daysSterJuvMale       <- sample(managementDays, annualStrategy['sterJuvMale'], replace=TRUE)
+      treatmentCount[sort(unique(daysSterJuvMale)), 17]       <- table(daysSterJuvMale)
+      daysSterJuvFemale     <- sample(managementDays, annualStrategy['sterJuvFemale'], replace=TRUE)
+      treatmentCount[sort(unique(daysSterJuvFemale)), 18]     <- table(daysSterJuvFemale)
+      daysEuthPuppyMale     <- sample(managementDays, annualStrategy['euthPuppyMale'], replace=TRUE)
+      treatmentCount[sort(unique(daysEuthPuppyMale)), 19]     <- table(daysEuthPuppyMale)
+      daysEuthPuppyFemale   <- sample(managementDays, annualStrategy['euthPuppyFemale'], replace=TRUE)
+      treatmentCount[sort(unique(daysEuthPuppyFemale)), 20]   <- table(daysEuthPuppyFemale)
+      daysEuthAdultMale     <- sample(managementDays, annualStrategy['euthAdultMale'], replace=TRUE)
+      treatmentCount[sort(unique(daysEuthAdultMale)), 21]     <- table(daysEuthAdultMale)
+      daysEuthAdultFemale   <- sample(managementDays, annualStrategy['euthAdultFemale'], replace=TRUE)
+      treatmentCount[sort(unique(daysEuthAdultFemale)), 22]   <- table(daysEuthAdultFemale)
+      daysEuthJuvMale       <- sample(managementDays, annualStrategy['euthJuvMale'], replace=TRUE)
+      treatmentCount[sort(unique(daysEuthJuvMale)), 23]       <- table(daysEuthJuvMale)
+      daysEuthJuvFemale     <- sample(managementDays, annualStrategy['euthJuvFemale'], replace=TRUE)
+      treatmentCount[sort(unique(daysEuthJuvFemale)), 24]     <- table(daysEuthJuvFemale)
+    }
+    
+    return(treatmentCount)
+  } 
+  ########################################
+  
+  ########################################
+  ManagementFunction <- function(d) {
+    if(boosterGiven == FALSE) {
+      # Arguments: day of the year
+      # Return:    An updated population matrix
+      # Purpose:   Carries out management and adjusts population matrix accordingly
+      
+      # Puppy male management:
+      if(treatmentCount[d, 'euthPuppyMale'] > 0) {
+        # Euthanize puppy males:
+        currentAbundance  <- nrow(popMatrix)
+        x <- rep(1, currentAbundance)
+        abundanceSequence <- seq(1, currentAbundance)
+        euth <- sample(seq(1, currentAbundance)[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==0], 
+                       min(treatmentCount[d, 'euthPuppyMale'],  
+                           length(seq(1,currentAbundance)[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==0])))
+        if(length(euth) != 0) {
+          popMatrix <- popMatrix[!abundanceSequence %in% euth, , drop=FALSE]
+        }
+      } else {
+        idSeq <- seq(1, nrow(popMatrix))
+        # Contracept puppy males:
+        if(treatmentCount[d, 'contraPuppyMale'] > 0) {
+          feasible <- idSeq[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==0 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          contra <- sample(feasible, min(length(feasible), treatmentCount[d, 'contraPuppyMale']))
+          popMatrix[contra, 'contracepted'] <- 1
+          popMatrix[contra, 'timeContra']   <- 0
+        } else {
+          # Sterilize puppy males:
+          feasible <- idSeq[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==0 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          ster <- sample(feasible, min(length(feasible), treatmentCount[d, 'sterPuppyMale']))
+          popMatrix[ster, 'sterilized'] <- 1
+        }
+        # Vaccinate puppy males:
+        feasible <- idSeq[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==0 &
+                          (popMatrix[, 'vaccinated']==0 | popMatrix[, 'timeVacc'] > d)]
+        vacc <- sample(feasible, min(length(feasible), treatmentCount[d, 'vaccPuppyMale']))
+        popMatrix[vacc, 'vaccinated'] <- 1
+        popMatrix[vacc, 'timeVacc']   <- 0
+      }
+      
+      # Puppy female management:
+      if(treatmentCount[d, 'euthPuppyFemale'] > 0) {
+        # Euthanize puppy females:
+        currentAbundance  <- nrow(popMatrix)
+        x <- rep(1, currentAbundance)
+        abundanceSequence <- seq(1, currentAbundance)
+        euth <- sample(seq(1,currentAbundance)[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==1], 
+                       min(treatmentCount[d, 'euthPuppyFemale'],  
+                           length(seq(1,currentAbundance)[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==1])))
+        if(length(euth) != 0) {
+          popMatrix <- popMatrix[!abundanceSequence %in% euth, , drop=FALSE]
+        }
+      } else {
+        idSeq <- seq(1, nrow(popMatrix))
+        # Contracept puppy females:
+        if(treatmentCount[d, 'contraPuppyFemale'] > 0) {
+          feasible <- idSeq[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==1 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          contra <- sample(feasible, min(length(feasible), treatmentCount[d, 'contraPuppyFemale']))
+          popMatrix[contra, 'contracepted'] <- 1
+          popMatrix[contra, 'timeContra']   <- 0
+        } else {
+          # Sterilize puppy females:
+          feasible <- idSeq[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==1 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          ster <- sample(feasible, min(length(feasible), treatmentCount[d, 'sterPuppyFemale']))
+          popMatrix[ster, 'sterilized'] <- 1
+        }
+        # Vaccinate puppy females:
+        feasible <- idSeq[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==1 &
+                          (popMatrix[, 'vaccinated']==0 | popMatrix[, 'timeVacc'] > d)]
+        vacc <- sample(feasible, min(length(feasible), treatmentCount[d, 'vaccPuppyFemale']))
+        popMatrix[vacc, 'vaccinated'] <- 1
+        popMatrix[vacc, 'timeVacc']   <- 0
+      }
+      
+      # Adult male management:
+      if(treatmentCount[d, 'euthAdultMale'] > 0) {
+        # Euthanize adult males:
+        currentAbundance  <- nrow(popMatrix)
+        x <- rep(1, currentAbundance)
+        abundanceSequence <- seq(1, currentAbundance)
+        euth <- sample(seq(1, currentAbundance)[popMatrix[, 'adult']==1 & popMatrix[, 'female']==0], 
+                       min(treatmentCount[d, 'euthAdultMale'], 
+                           length(seq(1,currentAbundance)[popMatrix[, 'adult']==1 & popMatrix[, 'female']==0])))
+        if(length(euth) != 0) {
+          popMatrix <- popMatrix[!abundanceSequence %in% euth, , drop=FALSE]
+        }
+      } else {
+        idSeq <- seq(1, nrow(popMatrix))
+        # Contracept adult males:
+        if(treatmentCount[d, 'contraAdultMale'] > 0) {
+          feasible <- idSeq[popMatrix[, 'adult']==1 & popMatrix[, 'female']==0 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          contra <- sample(feasible, min(length(feasible), treatmentCount[d, 'contraAdultMale']))
+          popMatrix[contra, 'contracepted'] <- 1
+          popMatrix[contra, 'timeContra']   <- 0
+        } else {
+          # Sterilize adult males:
+          feasible <- idSeq[popMatrix[, 'adult']==1 & popMatrix[, 'female']==0 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          ster <- sample(feasible, min(length(feasible), treatmentCount[d, 'sterAdultMale']))
+          popMatrix[ster, 'sterilized'] <- 1
+        }
+        # Vaccinate adult males:
+        feasible <- idSeq[popMatrix[, 'adult']==1 & popMatrix[, 'female']==0 &
+                          (popMatrix[, 'vaccinated']==0 | popMatrix[, 'timeVacc'] > d)]
+        vacc <- sample(feasible, min(length(feasible), treatmentCount[d, 'vaccAdultMale']))
+        popMatrix[vacc, 'vaccinated'] <- 1
+        popMatrix[vacc, 'timeVacc']   <- 0
+      }
+      
+      # Adult female management:
+      if(treatmentCount[d, 'euthAdultFemale'] > 0) {
+        # Euthanize adult females:
+        currentAbundance  <- nrow(popMatrix)
+        x <- rep(1, currentAbundance)
+        abundanceSequence <- seq(1, currentAbundance)
+        euth <- sample(seq(1,currentAbundance)[popMatrix[, 'adult']==1 & popMatrix[, 'female']==1], 
+                       min(treatmentCount[d, 'euthAdultFemale'],  
+                           length(seq(1, currentAbundance)[popMatrix[, 'adult']==1 & popMatrix[, 'female']==1])))
+        if(length(euth) != 0) {
+          popMatrix <- popMatrix[!abundanceSequence %in% euth, , drop=FALSE]
+        }
+      } else {
+        idSeq <- seq(1, nrow(popMatrix))
+        # Contracept adult females:
+        if(treatmentCount[d, 'contraAdultFemale'] > 0) {
+          feasible <- idSeq[popMatrix[, 'adult']==1 & popMatrix[, 'female']==1 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          contra <- sample(feasible, min(length(feasible), treatmentCount[d, 'contraAdultFemale']))
+          popMatrix[contra, 'contracepted'] <- 1
+          popMatrix[contra, 'timeContra']   <- 0
+        } else {
+          # Sterilize adult females:
+          feasible <- idSeq[popMatrix[, 'adult']==1 & popMatrix[, 'female']==1 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          ster <- sample(feasible, min(length(feasible), treatmentCount[d, 'sterAdultFemale']))
+          popMatrix[ster, 'sterilized'] <- 1
+        }
+        # Vaccinate adult females:
+        feasible <- idSeq[popMatrix[, 'adult']==1 & popMatrix[, 'female']==1 &
+                          (popMatrix[, 'vaccinated']==0 | popMatrix[, 'timeVacc'] > d)]
+        vacc <- sample(feasible, min(length(feasible), treatmentCount[d, 'vaccAdultFemale']))
+        popMatrix[vacc, 'vaccinated'] <- 1
+        popMatrix[vacc, 'timeVacc']   <- 0
+      }
+      
+      # Juvenile male management:
+      if(treatmentCount[d, 'euthJuvMale'] > 0) {
+        # Euthanize juvenile males:
+        currentAbundance  <- nrow(popMatrix)
+        x <- rep(1, currentAbundance)
+        abundanceSequence <- seq(1, currentAbundance)
+        euth <- sample(seq(1, currentAbundance)[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 &
+                                                popMatrix[, 'female']==0], 
+                       min(treatmentCount[d, 'euthJuvMale'],  
+                           length(seq(1, currentAbundance)[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 &
+                                                           popMatrix[, 'female']==0])))
+        if(length(euth) != 0) {
+          popMatrix <- popMatrix[!abundanceSequence %in% euth, , drop=FALSE]
+        }
+      } else {
+        idSeq <- seq(1, nrow(popMatrix))
+        # contra juvenile males
+        if(treatmentCount[d, 'contraJuvMale'] > 0) {
+          feasible <- idSeq[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 & popMatrix[, 'female']==0 &
+                            popMatrix[, 'sterilized']==0 & 
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          contra <- sample(feasible, min(length(feasible), treatmentCount[d, 'contraJuvMale']))
+          popMatrix[contra, 'contracepted'] <- 1
+          popMatrix[contra, 'timeContra']   <- 0
+        } else { 
+          # Sterilize juvenile males:
+          feasible <- idSeq[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 & popMatrix[, 'female']==0 &
+                            popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          ster <- sample(feasible, min(length(feasible), treatmentCount[d, 'sterJuvMale']))
+          popMatrix[ster, 'sterilized'] <- 1
+        }
+        # Vaccinate juvenile males:
+        feasible <- idSeq[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 & popMatrix[, 'female']==0 &
+                          (popMatrix[, 'vaccinated']==0 | popMatrix[, 'timeVacc'] > d)]
+        vacc <- sample(feasible, min(length(feasible), treatmentCount[d, 'vaccJuvMale']))
+        popMatrix[vacc, 'vaccinated'] <- 1
+        popMatrix[vacc, 'timeVacc']   <- 0
+      }
+  
+      # Juvenile female management:
+      if(treatmentCount[d, 'euthJuvFemale'] > 0) {
+        # Euthanize juvenile females:
+        currentAbundance  <- nrow(popMatrix)
+        x <- rep(1, currentAbundance)
+        abundanceSequence <- seq(1, currentAbundance)
+        euth <- sample(seq(1,currentAbundance)[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 &
+                                               popMatrix[, 'female']==1], 
+                       min(treatmentCount[d, 'euthJuvFemale'],  
+                           length(seq(1, currentAbundance)[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 &
+                                                           popMatrix[, 'female']==1])))
+        if(length(euth) != 0) {
+          popMatrix <- popMatrix[!abundanceSequence %in% euth, , drop=FALSE]
+        }
+      } else {
+        idSeq <- seq(1, nrow(popMatrix))
+        # Contracept juvenile females:
+        if(treatmentCount[d, 'contraJuvFemale']) {
+          feasible <- idSeq[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 &
+                            popMatrix[, 'female']==1 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          contra <- sample(feasible, min(length(feasible), treatmentCount[d, 'contraJuvFemale']))
+          popMatrix[contra, 'contracepted'] <- 1
+          popMatrix[contra, 'timeContra']   <- 0
+        } else {
+          # Sterilize juvenile females:
+          feasible <- idSeq[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 &
+                              popMatrix[, 'female']==1 & popMatrix[, 'sterilized']==0 &
+                              (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          ster <- sample(feasible, min(length(feasible), treatmentCount[d, 'sterJuvFemale']))
+          popMatrix[ster, 'sterilized'] <- 1
+        }
+        # Vaccinate juvenile females:
+        feasible <- idSeq[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 & popMatrix[, 'female']==1 &
+                          (popMatrix[, 'vaccinated']==0 | popMatrix[, 'timeVacc'] > d)]
+        vacc <- sample(feasible, min(length(feasible), treatmentCount[d, 'vaccJuvFemale']))
+        popMatrix[vacc, 'vaccinated'] <- 1
+        popMatrix[vacc, 'timeVacc']   <- 0
+      }
+      
+      return(popMatrix)
+      
+    } else {
+      # If boosterGive == True, do all this:
+  
+      # Puppy male management:
+      if(treatmentCount[d, 'euthPuppyMale'] > 0) {
+        # Euthanize puppy males:
+        currentAbundance  <- nrow(popMatrix)
+        x <- rep(1, currentAbundance)
+        abundanceSequence <- seq(1, currentAbundance)
+        euth <- sample(seq(1, currentAbundance)[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==0], 
+                       min(treatmentCount[d, 'euthPuppyMale'],  
+                           length(seq(1,currentAbundance)[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==0])))
+        if(length(euth) != 0) {
+          popMatrix <- popMatrix[!abundanceSequence %in% euth, , drop=FALSE]
+        }
+      } else {
+        idSeq <- seq(1, nrow(popMatrix))
+        # Contracept puppy males:
+        if(treatmentCount[d, 'contraPuppyMale'] > 0) {
+          feasible <- idSeq[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==0 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          contra <- sample(feasible, min(length(feasible), treatmentCount[d, 'contraPuppyMale']))
+          popMatrix[contra, 'contracepted'] <- 1
+          popMatrix[contra, 'timeContra']   <- 0
+        } else {
+          # Sterilize puppy males:
+          feasible <- idSeq[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==0 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          ster <- sample(feasible, min(length(feasible), treatmentCount[d, 'sterPuppyMale']))
+          popMatrix[ster, 'sterilized'] <- 1
+        }
+        # Vaccinate puppy males:
+        feasible <- idSeq[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==0 & popMatrix[, 'boosted']==0]
+        vacc <- sample(feasible, min(length(feasible), treatmentCount[d, 'vaccPuppyMale']))
+        popMatrix[vacc, 'boosted']  <- 1
+        popMatrix[vacc, 'timeVacc'] <- 0
+      }
+      
+      # Puppy female management:
+      if(treatmentCount[d, 'euthPuppyFemale'] > 0) {
+        # Euthanize puppy females:
+        currentAbundance  <- nrow(popMatrix)
+        x <- rep(1, currentAbundance)
+        abundanceSequence <- seq(1, currentAbundance)
+        euth <- sample(seq(1, currentAbundance)[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==1], 
+                       min(treatmentCount[d, 'euthPuppyFemale'],  
+                           length(seq(1, currentAbundance)[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==1])))
+        if(length(euth) != 0) {
+          popMatrix <- popMatrix[!abundanceSequence %in% euth, , drop=FALSE]
+        }
+      } else {
+        idSeq <- seq(1, nrow(popMatrix))
+        # Contracept puppy females:
+        if(treatmentCount[d, 'contraPuppyFemale'] > 0) {
+          feasible <- idSeq[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==1 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          contra <- sample(feasible, min(length(feasible), treatmentCount[d, 'contraPuppyFemale']))
+          popMatrix[contra, 'contracepted'] <- 1
+          popMatrix[contra, 'timeContra']   <- 0
+        } else {
+          # Sterilize puppy females:
+          feasible <- idSeq[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==1 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          ster <- sample(feasible, min(length(feasible), treatmentCount[d, 'sterPuppyFemale']))
+          popMatrix[ster, 'sterilized'] <- 1
+        }
+        # Vaccinate puppy females:
+        feasible <- idSeq[popMatrix[, 'puppy']==1 & popMatrix[, 'female']==1 & popMatrix[, 'boosted']==0]
+        vacc <- sample(feasible, min(length(feasible), treatmentCount[d, 'vaccPuppyFemale']))
+        popMatrix[vacc, 'boosted']  <- 1
+        popMatrix[vacc, 'timeVacc'] <- 0
+      }
+      
+      # Adult male management:
+      if(treatmentCount[d, 'euthAdultMale'] > 0) {
+        # Euthanize adult males:
+        currentAbundance  <- nrow(popMatrix)
+        x <- rep(1, currentAbundance)
+        abundanceSequence <- seq(1, currentAbundance)
+        euth <- sample(seq(1, currentAbundance)[popMatrix[, 'adult']==1 & popMatrix[, 'female']==0], 
+                       min(treatmentCount[d, 'euthAdultMale'],  
+                           length(seq(1, currentAbundance)[popMatrix[, 'adult']==1 & popMatrix[, 'female']==0])))
+        if(length(euth) != 0) {
+          popMatrix <- popMatrix[!abundanceSequence %in% euth, , drop=FALSE]
+        }
+      } else {
+        idSeq <- seq(1, nrow(popMatrix))
+        # Contracept adult males:
+        if(treatmentCount[d, 'contraAdultMale'] > 0) {
+          feasible <- idSeq[popMatrix[, 'adult']==1 & popMatrix[, 'female']==0 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          contra <- sample(feasible, min(length(feasible), treatmentCount[d, 'contraAdultMale']))
+          popMatrix[contra, 'contracepted'] <- 1
+          popMatrix[contra, 'timeContra']   <- 0
+        } else {
+          # Sterilize adult males:
+          feasible <- idSeq[popMatrix[, 'adult']==1 & popMatrix[, 'female']==0 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          ster <- sample(feasible, min(length(feasible), treatmentCount[d, 'sterAdultMale']))
+          popMatrix[ster, 'sterilized'] <- 1
+        }
+        # Vaccinate adult males:
+        feasible <- idSeq[popMatrix[, 'adult']==1 & popMatrix[, 'female']==0 & popMatrix[, 'boosted']==0]
+        vacc <- sample(feasible, min(length(feasible), treatmentCount[d, 'vaccAdultMale']))
+        popMatrix[vacc, 'boosted']  <- 1
+        popMatrix[vacc, 'timeVacc'] <- 0
+      }
+      
+      # Adult female management:
+      if(treatmentCount[d, 'euthAdultFemale'] > 0) {
+        # Euthanize adult females:
+        currentAbundance  <- nrow(popMatrix)
+        x <- rep(1, currentAbundance)
+        abundanceSequence <- seq(1, currentAbundance)
+        euth <- sample(seq(1, currentAbundance)[popMatrix[, 'adult']==1 & popMatrix[, 'female']==1], 
+                       min(treatmentCount[d, 'euthAdultFemale'],  
+                           length(seq(1, currentAbundance)[popMatrix[, 'adult']==1 & popMatrix[, 'female']==1])))
+        if(length(euth) != 0) {
+          popMatrix <- popMatrix[!abundanceSequence %in% euth, , drop=FALSE]
+        }
+      } else {
+        idSeq <- seq(1, nrow(popMatrix))
+        # Contracept adult females:
+        if(treatmentCount[d, 'contraAdultFemale'] > 0) {
+          feasible <- idSeq[popMatrix[, 'adult']==1 & popMatrix[, 'female']==1 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          contra <- sample(feasible, min(length(feasible), treatmentCount[d, 'contraAdultFemale']))
+          popMatrix[contra, 'contracepted'] <- 1
+          popMatrix[contra, 'timeContra']   <- 0
+        } else {
+          # Sterilize adult females:
+          feasible <- idSeq[popMatrix[, 'adult']==1 & popMatrix[, 'female']==1 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          ster <- sample(feasible, min(length(feasible), treatmentCount[d, 'sterAdultFemale']))
+          popMatrix[ster, 'sterilized'] <- 1
+        }
+        # Vaccinate adult females:
+        feasible <- idSeq[popMatrix[, 'adult']==1 & popMatrix[, 'female']==1 & popMatrix[, 'boosted']==0]
+        vacc <- sample(feasible, min(length(feasible), treatmentCount[d, 'vaccAdultFemale']))
+        popMatrix[vacc, 'boosted']  <- 1
+        popMatrix[vacc, 'timeVacc'] <- 0
+      }
+      
+      # Juvenile male management:
+      if(treatmentCount[d, 'euthJuvMale'] > 0) {
+        # Euthanize juvenile males:
+        currentAbundance  <- nrow(popMatrix)
+        x <- rep(1, currentAbundance)
+        abundanceSequence <- seq(1, currentAbundance)
+        euth <- sample(seq(1,currentAbundance)[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 &
+                                               popMatrix[, 'female']==0], 
+                       min(treatmentCount[d, 'euthJuvMale'],  
+                           length(seq(1, currentAbundance)[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 &
+                                                           popMatrix[, 'female']==0])))
+        if(length(euth) != 0) {
+          popMatrix <- popMatrix[!abundanceSequence %in% euth, , drop=FALSE]
+        }
+      } else {
+        idSeq <- seq(1, nrow(popMatrix))
+        # contra juvenile males
+        if(treatmentCount[d, 'contraJuvMale'] > 0) {
+          feasible <- idSeq[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 &
+                            popMatrix[, 'female']==0 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          contra <- sample(feasible, min(length(feasible), treatmentCount[d, 'contraJuvMale']))
+          popMatrix[contra, 'contracepted'] <- 1
+          popMatrix[contra, 'timeContra']   <- 0
+        } else { 
+          # Sterilize juvenile males:
+          feasible <- idSeq[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 &
+                            popMatrix[, 'female']==0 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          ster <- sample(feasible, min(length(feasible), treatmentCount[d, 'sterJuvMale']))
+          popMatrix[ster, 'sterilized'] <- 1
+        }
+        # Vaccinate juvenile males:
+        feasible <- idSeq[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 &
+                          popMatrix[, 'female']==0 & popMatrix[, 'boosted']==0]
+        vacc <- sample(feasible, min(length(feasible), treatmentCount[d, 'vaccJuvMale']))
+        popMatrix[vacc, 'boosted']  <- 1
+        popMatrix[vacc, 'timeVacc'] <- 0
+      }
+      
+      # Juvenile female management:
+      if(treatmentCount[d, 'euthJuvFemale'] > 0) {
+        # Euthanize juvenile females:
+        currentAbundance  <- nrow(popMatrix)
+        x <- rep(1, currentAbundance)
+        abundanceSequence <- seq(1, currentAbundance)
+        euth <- sample(seq(1,currentAbundance)[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 &
+                                               popMatrix[, 'female']==1], 
+                       min(treatmentCount[d, 'euthJuvFemale'],  
+                           length(seq(1, currentAbundance)[popMatrix[, 'adult']==0 & 
+                                                             popMatrix[, 'puppy']==0 &
+                                                             popMatrix[, 'female']==1])))
+        if(length(euth) != 0) {
+          popMatrix <- popMatrix[!abundanceSequence %in% euth, , drop=FALSE]
+        }
+      } else {
+        idSeq <- seq(1, nrow(popMatrix))
+        # Contracept juvenile females:
+        if(treatmentCount[d, 'contraJuvFemale']) {
+          feasible <- idSeq[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 & 
+                            popMatrix[, 'female']==1 & popMatrix[, 'sterilized']==0 & 
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          contra <- sample(feasible, min(length(feasible), treatmentCount[d, 'contraJuvFemale']))
+          popMatrix[contra, 'contracepted'] <- 1
+          popMatrix[contra, 'timeContra']   <- 0
+        } else {
+          # Sterilize juvenile females:
+          feasible <- idSeq[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 &
+                            popMatrix[, 'female']==1 & popMatrix[, 'sterilized']==0 &
+                            (popMatrix[, 'contracepted']==0 | popMatrix[, 'timeContra'] > d)]
+          ster <- sample(feasible, min(length(feasible), treatmentCount[d, 'sterJuvFemale']))
+          popMatrix[ster, 'sterilized'] <- 1
+          
+        }
+        # Vaccinate juvenile females:
+        feasible <- idSeq[popMatrix[, 'adult']==0 & popMatrix[, 'puppy']==0 &
+                          popMatrix[, 'female']==1 & popMatrix[, 'boosted']==0]
+        vacc <- sample(feasible, min(length(feasible), treatmentCount[d, 'vaccJuvFemale']))
+        popMatrix[vacc, 'boosted']  <- 1
+        popMatrix[vacc, 'timeVacc'] <- 0
+        
+      }
+      
+      # Adjust to account for booster:
+      # note: In the above, vaccination was given as long as booster==0. Below, we make an adjustment to account for 
+      #       the fact that some dogs just received vaccination for the first time, while other received the booster. 
+      idSeq <- seq(1, nrow(popMatrix))
+      swap <- idSeq[popMatrix[, 'vaccinated'] == 0 & popMatrix[, 'boosted'] == 1]
+      popMatrix[swap, 'vaccinated'] <- 1
+      popMatrix[swap, 'boosted'] <- 0
+      
+      return(popMatrix)
+    }
+  }
+  ########################################
+
+  ########################################
+  TimeFunction <- function() {
+    # Arguments: None.
+    # Return:    An updated population matrix.
+    # Purpose:   Updates time-related columns in the population matrix.
+    
+    if (boosterGiven == FALSE) {
+      # Turn off vaccinated and contracepted when time limit reached: 
+      popMatrix[popMatrix[, 'timeVacc'] == timeVaccineEffective, 'vaccinated'] <- 0
+      popMatrix[(popMatrix[, 'timeContra'] == timeContraEffectiveFemales & popMatrix[, 'female'] == 1), 
+                'contracepted'] <- 0
+      popMatrix[(popMatrix[, 'timeContra'] == timeContraEffectiveMales & popMatrix[, 'female'] == 0), 
+                'contracepted'] <- 0
+    } else {
+      # Turn off vaccinated when time limit reached: 
+      popMatrix[(popMatrix[, 'timeVacc'] == timeVaccineEffective & popMatrix[, 'boosted'] == 0), 'vaccinated'] <- 0
+      
+      # Turn off boosted and vaccinated when time limit reached:
+      popMatrix[(popMatrix[, 'timeVacc'] == timeBoosterEffective & popMatrix[, 'boosted'] == 1), 'vaccinated'] <- 0
+      popMatrix[(popMatrix[, 'timeVacc'] == timeBoosterEffective & popMatrix[, 'boosted'] == 1), 'boosted'] <- 0
+      
+      # Turn off contracepted when time limit reached:
+      popMatrix[(popMatrix[, 'timeContra'] == timeContraEffectiveFemales & popMatrix[, 'female'] == 1), 
+                'contracepted'] <- 0
+      popMatrix[(popMatrix[, 'timeContra'] == timeContraEffectiveMales & popMatrix[, 'female'] == 0), 
+                'contracepted'] <- 0
+    }
+    
+    popMatrix[, 'age']           <- popMatrix[, 'age'] + 1
+    popMatrix[, 'timeVacc']      <- popMatrix[, 'timeVacc'] + 1
+    popMatrix[, 'timeContra']    <- popMatrix[, 'timeContra'] + 1
+    popMatrix[, 'timeExposed']   <- popMatrix[, 'timeExposed'] + 1
+    popMatrix[, 'timeInfective'] <- popMatrix[, 'timeInfective'] + 1
+    
+    return(popMatrix)
+  }
+  ########################################
+
+  ########################################
+  withProgress(min=0, max=100, value=0, message = '', detail = '', {
+    # Loop through iterations:
+    for(i in 1:iterations) {
+      setProgress(round(100*(i/iterations)), message=paste('Running iteration', i, 'of', iterations))          
+      popMatrix <- InitialPopulation()
+      
+      # Loop through years:
+      for(j in 1:simulationYears) {
+        
+        annualStrategy <- round(AnnualStrategy())
+        treatmentCount <- StrategySchedule()
+        
+        # Loop through days of the year
+        for(d in 1:365) {
+          popMatrix[, 'month'] <- monthSeries[d]
+          resultsMatrix[(365 * (j-1) + d), ,i] <- CensusFunction()
+          popMatrix <- MortalityFunction()
+          popMatrix <- ReproductionFunction(d)
+          popMatrix <- ImmigrationFunction()
+          popMatrix <- DiseaseProgressionFunction()
+          popMatrix <- DiseaseSpreadFunction()
+          tempVacc <- sum(popMatrix[, 'vaccinated'])
+          popMatrix <- ManagementFunction(d)
+          # Record new vaccinations:
+          resultsMatrix[(365 * (j-1) + d), 'newlyVaccinated', i] <- sum(popMatrix[, 'vaccinated']) - tempVacc
+          popMatrix <- TimeFunction()
+        }  # close d for loop
+      }  # close j for loop
+    }  # close i for loop
+  })  # close withProgress
+  ########################################
+
+  # Return the result from eventReactive:
+  resultsMatrix
+})  # close eventReactive
+########################################################################################################################
+
+########################################################################################################################
+getIterations <- eventReactive(input$run, {
+  # Get iterations for use in results:
+  input$iterations
+})  # close eventReactive
+
+getCostPerPEP <- eventReactive(input$run, {
+  # Get costPerPEP for use in results:
+  input$costPerPEP
+})  # close eventReactive
+
+getAnnualBudget <- eventReactive(input$run, {
+  # Get budgets for use in results:
+  c(input$annualBudget1, input$annualBudget2, input$annualBudget3, input$annualBudget4, input$annualBudget5)
+})  # close eventReactive
+
+getCarryingCapacity <- eventReactive(input$run, {
+  # Get carrying capacity for use in results:
+  input$carryingCap
+})  # close eventReactive
+########################################################################################################################
+
+########################################################################################################################
+# Plot used in the Graphical Results tab:
+output$graphicalResults <- renderPlot({
+  
+  # Get some values that will be needed
+  resultsMatrix   <- getResultsMatrix()
+  iterations      <- getIterations()
+  i               <- iterations
+  simulationYears <- 5
+  simulationEnd   <- 365 * simulationYears 
+  carryingCap     <- getCarryingCapacity()
+  abunMax         <- max(resultsMatrix[, 'abundance', i], resultsMatrix[, 'abundance', i-1],
+                         resultsMatrix[, 'abundance', i-2], resultsMatrix[, 'abundance', i-3],
+                         resultsMatrix[, 'abundance', i-4], apply(resultsMatrix[, 'abundance', ], 
+                                                                  1, mean, na.rm=TRUE)) * 1.1
+  prevMax         <- max(resultsMatrix[, 'infective', i], resultsMatrix[, 'infective', i-1],
+                         resultsMatrix[, 'infective', i-2], resultsMatrix[, 'infective', i-3],
+                         resultsMatrix[, 'infective', i-4], apply(resultsMatrix[, 'infective', ], 
+                                                                  1, mean, na.rm=TRUE)) * 1.1
+  vaccMax         <- max(resultsMatrix[, 'vaccinated', i], resultsMatrix[, 'vaccinated', i-1],
+                         resultsMatrix[, 'vaccinated', i-2], resultsMatrix[, 'vaccinated', i-3],
+                         resultsMatrix[, 'vaccinated', i-4], apply(resultsMatrix[, 'vaccinated', ], 
+                                                                   1, mean, na.rm=TRUE)) * 1.1
+  daySeries       <- seq(1, simulationEnd)
+  
+  # Construct abundance plot:
+  abundPlot <- ggplot() +
+    geom_line(aes(daySeries, resultsMatrix[, 'abundance', i]), colour = "blue") +
+    geom_line(aes(daySeries, resultsMatrix[, 'abundance', i-1]), colour = "purple") +
+    geom_line(aes(daySeries, resultsMatrix[, 'abundance', i-2]), colour = "green") +
+    geom_line(aes(daySeries, resultsMatrix[, 'abundance', i-3]), colour = "red") +
+    geom_line(aes(daySeries, resultsMatrix[, 'abundance', i-4]), colour = "orange") +
+    geom_line(aes(daySeries, apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE)), colour = "black", size=1.2) +
+    scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
+                       labels = c('1', '2', '3', '4', '5')) +
+    scale_y_continuous(limits=c(0, abunMax), expand = c(0, 0)) +
+    ylab('abundance') +
+    theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
+    theme(axis.text=element_text(size=12, color='black'), 
+          axis.title=element_text(size=14, face="bold", color='black')) +
+    xlab('') +
+    theme(panel.background = element_rect(fill = 'lightgray', colour = 'lightgray'))
+    cols <- c('sample iteration 1'='blue', 'sample iteration 2'='purple', 
+              'sample iteration 3'='green', 'sample iteration 4'='red', 
+              'sample iteration 5'='orange', 
+              'mean across all iterations'='black')
+  
+  # Construct the disease prevalence plot:
+  infectPlot <- ggplot() +
+    geom_line(aes(daySeries, resultsMatrix[, 'infective', i]), colour = "blue") +
+    geom_line(aes(daySeries, resultsMatrix[, 'infective', i-1]), colour = "purple") +
+    geom_line(aes(daySeries, resultsMatrix[, 'infective', i-2]), colour = "green") +
+    geom_line(aes(daySeries, resultsMatrix[, 'infective', i-3]), colour = "red") +
+    geom_line(aes(daySeries, resultsMatrix[, 'infective', i-4]), colour = "orange") +
+    geom_line(aes(daySeries, apply(resultsMatrix[, 'infective', ], 1, mean, na.rm=TRUE)), colour = "black", size=1.2) +
+    scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
+                       labels = c('1', '2', '3', '4', '5')) +
+    scale_y_continuous(limits=c(0, prevMax), expand = c(0, 0)) +
+    ylab('disease prevalence') +
+    theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
+    theme(axis.text=element_text(size=12, color='black'), 
+          axis.title=element_text(size=14, face="bold", color='black')) +
+    xlab('') +
+    theme(panel.background = element_rect(fill = 'lightgray', colour = 'lightgray'))
+  
+  # Construct the vaccination plot:
+  vaccPlot <- ggplot() + 
+    geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', i], colour = 'sample iteration 1')) +
+    geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', i-1], colour = 'sample iteration 2')) +
+    geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', i-2], colour = 'sample iteration 3')) +
+    geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', i-3], colour = 'sample iteration 4')) +
+    geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', i-4], colour = 'sample iteration 5')) +
+    geom_line(aes(daySeries, apply(resultsMatrix[, 'vaccinated', ], 1, mean, na.rm=TRUE), 
+                  colour = 'mean across all iterations'), size=1.2) +
+    scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
+                       labels = c('1', '2', '3', '4', '5')) +
+    scale_y_continuous(limits=c(0, vaccMax), expand = c(0, 0)) +
+    ylab('vaccine immunity') +
+    theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
+    theme(axis.text=element_text(size=12, color='black'), 
+          axis.title=element_text(size=14, face="bold", color='black')) +
+    xlab('year') +
+    theme(panel.background = element_rect(fill = 'lightgray', colour = 'lightgray')) +
+    scale_colour_manual(name=NULL, values=cols, labels=c('mean result    ', rep('sample iteration    ', 5))) +
+    theme(legend.text.align=0) + 
+    theme(legend.position='bottom') 
+  
+  # Put the three plots together:
+  grid.draw(rbind(ggplotGrob(abundPlot), ggplotGrob(infectPlot), ggplotGrob(vaccPlot)))
+})  # close renderPlot
+########################################################################################################################
+
+########################################################################################################################
+# Numerical results:
+output$numericalResults <- renderPlot({
+        
+  resultsMatrix        <- getResultsMatrix()
+  costPerPEP           <- getCostPerPEP()
+  annualBudget         <- getAnnualBudget()
+  simulationYears      <- 5                     
+  simulationEnd        <- 365 * simulationYears
+  carryingCap          <- getCarryingCapacity()
+  dogDaysOfInfection   <- round(sum(apply((resultsMatrix[, 'exposed', ] + resultsMatrix[, 'infective', ]), 
+                                          1, mean, na.rm=TRUE)))
+  meanAbundance        <- round(mean(apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE)))
+  totalCostOfInfection <- round(sum(apply(resultsMatrix[, 'PEPs', ], 1, mean, na.rm=TRUE))*costPerPEP)
+  totalHumanDeaths     <- round(sum(apply(resultsMatrix[, 'lifeLoss', ], 1, mean, na.rm=TRUE)))
+  totalBudget          <- round(sum(annualBudget[1:simulationYears]))
+  totalVaccinations    <- round(sum(apply(resultsMatrix[, 'newlyVaccinated', ], 1, mean, na.rm=TRUE)))
+  par(mar = c(0,0,0,0))
+  plot(c(0, 1), c(0, 1), ann = F, bty = 'n', type = 'n', xaxt = 'n', yaxt = 'n')
+  text(0, 0.93, paste('Averages across all iterations:'), pos=4, cex=2)
+  text(0.0, 0.86, paste('mean abundance =', meanAbundance), pos=4, cex=1.5, col='royalblue')
+  text(0.0, 0.79, paste('dog-days of infection =', dogDaysOfInfection), pos=4, cex=1.5, col='royalblue')
+  text(0.0, 0.72, paste('cost of infection =', totalCostOfInfection), pos=4, cex=1.5, col='royalblue')
+  text(0.0, 0.65, paste('human deaths =', totalHumanDeaths), pos=4, cex=1.5, col='royalblue')
+  text(0.0, 0.58, paste ('management cost =', totalBudget), pos=4, cex=1.5, col='royalblue')
+  text(0.0, 0.51, paste('total vaccinations =', totalVaccinations), pos=4, cex=1.5, col='royalblue')
+})  # close renderPlot
+########################################################################################################################
+
+})  # close shinyServer
+################################################################################
