@@ -1218,7 +1218,6 @@ getResultsMatrix <- eventReactive(input$run, {
       
       # Loop through years:
       for(j in 1:simulationYears) {
-        
         annualStrategy <- round(AnnualStrategy())
         treatmentCount <- StrategySchedule()
         
