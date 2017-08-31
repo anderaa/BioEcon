@@ -203,27 +203,31 @@ mortalityData <- cbind(mortalityData, yearMatrix, monthMatrix)
 ########################################################################################################################
 # subsetting data by age
 
-ageAbove300 <- mortalityData[mortalityData$age>=300, ]
-below300 <- mortalityData[mortalityData$age < 300, ]
+adultData <- mortalityData[mortalityData$age >= 300, ]
+juvenileData <- mortalityData[mortalityData$age < 300 & mortalityData$age >= 90, ]
+puppyData <- mortalityData[mortalityData$age < 90, ]
 
 # estimating intercept only model for those dogs aged >= 300 days
-intercept300Above <- glm(exit ~ 1, data=ageAbove300, family=binomial(link="probit"))
-summary(intercept300Above)
+adultModel <- glm(exit ~ 1, data=adultData, family=binomial(link="probit"))
+summary(adultModel)
+exitParamAdult <- coef(adultModel)
+dailyexitProbAdult <- pnorm(exitParamAdult)
+annualExitProbAdult <- 1 - ((1 - dailyexitProbAdult) ^ (365))
+annualExitProbAdult
 
-exitParam300 <- coef(intercept300Above)
-dailyexitProb300 <- pnorm(exitParam300)
+# estimating same model for dogs aged < 300 days and >= 90 days
+juvenileModel <- glm(exit ~ 1, data=juvenileData, family=binomial(link="probit"))
+summary(juvenileModel)
+exitParamJuvenile <- coef(juvenileModel)
+dailyexitProbJuvenile <- pnorm(exitParamJuvenile)
+annualExitProbJuvenile <- 1 - ((1 - dailyexitProbJuvenile) ^ (365))
+annualExitProbJuvenile
 
-annualExitProb300 <- 1-((1-dailyexitProb300)^(365))
+# estimating same model for dogs aged < 90 days
+puppyModel <- glm(exit ~ 1, data=puppyData, family=binomial(link="probit"))
+summary(puppyModel)
+exitParamPuppy <- coef(puppyModel)
+dailyexitProbPuppy <- pnorm(exitParamPuppy)
+annualExitProbPuppy <- 1 - ((1 - dailyexitProbPuppy) ^ (365))
+annualExitProbPuppy
 
-annualExitProb300
-
-# estimating same model for dogs aged < 300 days
-intercept300below <- glm(exit ~ 1, data=below300, family=binomial(link="probit"))
-summary(intercept300below)
-
-exitParamBelow <- coef(intercept300below)
-dailyexitProbBelow <- pnorm(exitParamBelow)
-
-annualExitProbBelow <- 1-((1-dailyexitProbBelow)^(365))
-
-annualExitProbBelow
