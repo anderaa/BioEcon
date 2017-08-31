@@ -47,10 +47,10 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
             fluidRow(
               column(4, 
                 sliderInput('pupAnnMortProb', label='annual puppy mortality probability',
-                            min=0.0, max=1.0, value=0.78, ticks=FALSE), 
+                            min=0.0, max=1.0, value=0.90, ticks=FALSE), 
                 br(),
                 sliderInput('juvAnnMortProb', label='annual juvenile mortality probability',
-                            min=0.0, max=1.0, value=0.78, ticks=FALSE), 
+                            min=0.0, max=1.0, value=0.63, ticks=FALSE), 
                 br(),
                 sliderInput('adultAnnMortProb', label='annual adult mortality probability',
                             min=0.0, max=1.0, value=0.32, ticks=FALSE), 
