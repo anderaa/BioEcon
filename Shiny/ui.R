@@ -24,7 +24,7 @@ library(shiny)
 # Define UI for application:
 shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'styles.css'),
   img(src = "logo.png", height = 47, align='left'),      
-  titlePanel(strong('BioEcon for Canine Rabies - v0.1'), windowTitle='BioEcon'), 
+  titlePanel(strong('BioEcon for Canine Rabies - v0.2'), windowTitle='BioEcon'), 
     tabsetPanel(id='mainTabs', type='pills',
       tabPanel('Model Setup',
         navlistPanel('Model Setup', widths=c(3, 9),
@@ -294,7 +294,7 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
         br(), br(),
         'Built by Aaron Anderson, Johann Kotze, Brody Hatch, and Jordan Navin',
         br(), br(),
-        'Version 0.1. Last updated September 1, 2017.',
+        'Version 0.2. Last updated October 4, 2017.',
         br(), br(),
         'Inquiries and bugs to: Aaron.M.Anderson@aphis.usda.gov', 
         br(), br(),
