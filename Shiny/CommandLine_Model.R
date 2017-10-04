@@ -268,26 +268,17 @@ names(strategyCostVector) <- strategyNames
 
 # Create a mapping between cost and number of dogs contacted:
 contactMapping <- c(seq(0.0, 0.25, length.out=min(10000, (contactCost25k + 1)*10000)),
-                    seq(0.25, 0.5, 
-                        length.out=
-                          min(10000, ((contactCost50k - contactCost25k + 1)*10000)))[-1],
-                    seq(0.5, 0.75, 
-                        length.out=
-                          min(10000, ((contactCost75k - contactCost50k + 1)*10000)))[-1],
-                    seq(0.75, 1.0, 
-                        length.out=
-                          min(10000, ((contactCost100k - contactCost75k + 1)*10000)))[-1])
+                    seq(0.25, 0.5, length.out=min(10000, ((contactCost50k - contactCost25k + 1)*10000)))[-1],
+                    seq(0.5, 0.75, length.out=min(10000, ((contactCost75k - contactCost50k + 1)*10000)))[-1],
+                    seq(0.75, 1.0, length.out=min(10000, ((contactCost100k - contactCost75k + 1)*10000)))[-1])
 
 costSequence <- c(seq(0.0, contactCost25k, length.out=min(10000, (contactCost25k + 1)*10000)),
                     seq(contactCost25k, contactCost50k, 
-                        length.out=
-                          min(10000, ((contactCost50k - contactCost25k + 1)*10000)))[-1],
+                        length.out=min(10000, ((contactCost50k - contactCost25k + 1)*10000)))[-1],
                     seq(contactCost50k, contactCost75k, 
-                        length.out=
-                          min(10000, ((contactCost75k - contactCost50k + 1)*10000)))[-1],
+                        length.out=min(10000, ((contactCost75k - contactCost50k + 1)*10000)))[-1],
                     seq(contactCost75k, contactCost100k, 
-                        length.out=
-                          min(10000, ((contactCost100k - contactCost75k + 1)*10000)))[-1])
+                        length.out=min(10000, ((contactCost100k - contactCost75k + 1)*10000)))[-1])
 ########################################
 
 ########################################
@@ -355,12 +346,8 @@ TotalCost <- function(k, dogDemoForStrategies) {
   dogsContacted = contactMapping[k] * currentAbundance
   adjAllocation = contactAllocation * (currentAbundance / carryingCap)
   
-  demoOfContacted <- 
-    dogsContacted * pmax((dogDemoForStrategies / nrow(popMatrix)), 
-                         0, na.rm=TRUE)
-  totalCost <- 
-    adjAllocation + 
-    sum(demoOfContacted * strategyCostVector * strategyVector)
+  demoOfContacted <- dogsContacted * pmax((dogDemoForStrategies / nrow(popMatrix)), 0, na.rm=TRUE)
+  totalCost <- adjAllocation + sum(demoOfContacted * strategyCostVector * strategyVector)
   
   return(totalCost)
 }
@@ -456,12 +443,8 @@ AnnualStrategy <- function() {
     }
     contactAllocation = costSequence[k + 1]
     # adjust contact cost for current population relative to k
-    dogsContacted = contactMapping[k + 1] * 
-                    currentAbundance
-
-    demoOfContacted <- 
-      dogsContacted * pmax((dogDemoForStrategies / nrow(popMatrix)), 
-                            0, na.rm=TRUE)
+    dogsContacted = contactMapping[k + 1] * currentAbundance
+    demoOfContacted <- dogsContacted * pmax((dogDemoForStrategies / nrow(popMatrix)), 0, na.rm=TRUE)
     strategyResults <- demoOfContacted * strategyVector
     
   } else {
