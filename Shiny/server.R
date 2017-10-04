@@ -311,15 +311,28 @@ getResultsMatrix <- eventReactive(input$run, {
   names(strategyCostVector) <- strategyNames
   
   # Create a mapping between cost and number of dogs contacted:
-  contactMapping <- c(seq(0.0, 0.25, length.out=(contactCost25k + 1)*10000),
-                      seq(0.25, 0.5, length.out=((contactCost50k - contactCost25k + 1)*10000))[-1],
-                      seq(0.5, 0.75, length.out=((contactCost75k - contactCost50k + 1)*10000))[-1],
-                      seq(0.75, 1.0, length.out=((contactCost100k - contactCost75k + 1)*10000))[-1])
+  #contactMapping <- c(seq(0.0, 0.25, length.out=(contactCost25k + 1)*10000),
+  #                    seq(0.25, 0.5, length.out=((contactCost50k - contactCost25k + 1)*10000))[-1],
+  #                    seq(0.5, 0.75, length.out=((contactCost75k - contactCost50k + 1)*10000))[-1],
+  #                    seq(0.75, 1.0, length.out=((contactCost100k - contactCost75k + 1)*10000))[-1])
   
-  costSequence <- c(seq(0.0, contactCost25k, length.out=(contactCost25k + 1)*10000),
-                    seq(contactCost25k, contactCost50k, length.out=((contactCost50k - contactCost25k + 1)*10000))[-1],
-                    seq(contactCost50k, contactCost75k, length.out=((contactCost75k - contactCost50k + 1)*10000))[-1],
-                    seq(contactCost75k, contactCost100k, length.out=((contactCost100k - contactCost75k + 1)*10000))[-1])
+  #costSequence <- c(seq(0.0, contactCost25k, length.out=(contactCost25k + 1)*10000),
+  #                  seq(contactCost25k, contactCost50k, length.out=((contactCost50k - contactCost25k + 1)*10000))[-1],
+  #                  seq(contactCost50k, contactCost75k, length.out=((contactCost75k - contactCost50k + 1)*10000))[-1],
+  #                  seq(contactCost75k, contactCost100k, length.out=((contactCost100k - contactCost75k + 1)*10000))[-1])
+  
+  contactMapping <- c(seq(0.0, 0.25, length.out=min(10000, (contactCost25k + 1)*10000)),
+                      seq(0.25, 0.5, length.out=min(10000, ((contactCost50k - contactCost25k + 1)*10000)))[-1],
+                      seq(0.5, 0.75, length.out=min(10000, ((contactCost75k - contactCost50k + 1)*10000)))[-1],
+                      seq(0.75, 1.0, length.out=min(10000, ((contactCost100k - contactCost75k + 1)*10000)))[-1])
+  
+  costSequence <- c(seq(0.0, contactCost25k, length.out=min(10000, (contactCost25k + 1)*10000)),
+                    seq(contactCost25k, contactCost50k, 
+                        length.out=min(10000, ((contactCost50k - contactCost25k + 1)*10000)))[-1],
+                    seq(contactCost50k, contactCost75k, 
+                        length.out=min(10000, ((contactCost75k - contactCost50k + 1)*10000)))[-1],
+                    seq(contactCost75k, contactCost100k, 
+                        length.out=min(10000, ((contactCost100k - contactCost75k + 1)*10000)))[-1])
   ########################################
 
   ########################################
