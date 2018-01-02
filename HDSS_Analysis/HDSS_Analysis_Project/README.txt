@@ -7,6 +7,7 @@ Outline of Scripts:
 1. Exit Analyses
 	A. constant-only, with separate models for juveniles and adults (adults >= 300 days),
 	   then take results and convert to annual probabability of mortality for juveniles and adults
+	B. Some extra analyses that incorporate sex and vaccination status  
 
 2. Reproduction Analyses
 	A. average litters per female per year

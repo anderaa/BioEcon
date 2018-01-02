@@ -11,8 +11,6 @@ residencyTable   <- read.delim("residency_table.txt")
 standsTable      <- read.delim("stands_table.txt")
 vaccinationTable <- read.delim("vaccination_table.txt")
 
-
-
 # set start and end date of analysis
 startDate <- as.numeric(as.Date("2012-1-1", "%Y-%m-%d"))
 endDate   <- as.numeric(as.Date("2015-12-31", "%Y-%m-%d"))
