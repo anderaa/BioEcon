@@ -102,17 +102,17 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
           ),  # close Disease Transmission tabPanel
 
           tabPanel('Disease Impacts',
-            numericInput('bitesPerNonRabid', label='daily bites per non-rabid', value=0.003),
-            numericInput('bitesPerRabid', label='daily bites per rabid', value=0.5), 
+            numericInput('bitesPerNonRabid', label='daily bites per non-rabid', value=0.00017),
+            numericInput('bitesPerRabid', label='daily bites per rabid', value=0.06756), 
             br(),
             sliderInput('PEPperNonRabidBite', label='PEP per non-rabid bite',
-                        min=0.0, max=1.0, value=0.05, ticks=FALSE),
-            sliderInput('PEPperRabidBite', label='PEP per rabid bite', min=0.0, max=1.0, value=0.91, ticks=FALSE), 
+                        min=0.0, max=1.0, value=0.991, ticks=FALSE),
+            sliderInput('PEPperRabidBite', label='PEP per rabid bite', min=0.0, max=1.0, value=0.991, ticks=FALSE), 
             br(),
-            numericInput('costPerPEP', label='cost per PEP', value=3), 
+            numericInput('costPerPEP', label='cost per PEP', value=754.92), 
             br(),
             sliderInput('lifeLossPerRabidBite', label='probability of human death from rabid bite',
-                        min=0.0, max=1.0, value=0.02, step=0.01, ticks=FALSE)
+                        min=0.0, max=1.0, value=0.0171, step=0.01, ticks=FALSE)
           ),  # close Disease Impacts tabPabel
 
           tabPanel('Management Costs',
@@ -132,10 +132,10 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
                         initial abundance of the population how much would it cost to contact or capture in a single 
                         year:'), 
                 br(), br(),
-                numericInput('contactCost25', label='25% of the population at initial abundance', value=0),
-                numericInput('contactCost50', label='50% of the population at initial abundance', value=0),
-                numericInput('contactCost75', label='75% of the population at initial abundance', value=0),
-                numericInput('contactCost100', label='100% of the population at initial abundance', value=0),
+                numericInput('contactCost25', label='25% of the population at initial abundance', value=1019.09),
+                numericInput('contactCost50', label='50% of the population at initial abundance', value=2757.3),
+                numericInput('contactCost75', label='75% of the population at initial abundance', value=4735.89),
+                numericInput('contactCost100', label='100% of the population at initial abundance', value=8453.7),
                 helpText('HINT: Per-dog capture or contact costs are likely to increase as more dogs are captured 
                           or contacted.')
               )  # close column
