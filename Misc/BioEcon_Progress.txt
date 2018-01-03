@@ -80,6 +80,7 @@ the prob of a non-rabid bite receiving PEP is
 
 
 
+3-1-2018: Starting running model locally with finalized parameters
 
 
 
