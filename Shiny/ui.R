@@ -89,7 +89,7 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
 
           tabPanel('Disease Transmission',
             sliderInput('monthInitIntroduction', label='month of the initial introduction', 
-                        min=1, max=48, value=1, step=1, ticks=FALSE, sep=''), 
+                        min=1, max=48, value=25, step=1, ticks=FALSE, sep=''), 
             br(),
             sliderInput('sequentialMonthsIntro', label='number of sequential months of introduction ', 
                         min=1, max=12, value=1, step=1, ticks=FALSE, sep=''), 
