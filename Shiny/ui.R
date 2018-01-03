@@ -111,8 +111,8 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
             br(),
             numericInput('costPerPEP', label='cost per PEP', value=754.92), 
             br(),
-            sliderInput('lifeLossPerRabidBite', label='probability of human death from rabid bite',
-                        min=0.0, max=1.0, value=0.0171, step=0.01, ticks=FALSE)
+            sliderInput('lifeLossPerRabidBite', label='probability of human death from rabid bite (w/out PEP)',
+                        min=0.0, max=1.0, value=0.19, step=0.01, ticks=FALSE)
           ),  # close Disease Impacts tabPabel
 
           tabPanel('Management Costs',

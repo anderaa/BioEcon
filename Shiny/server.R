@@ -631,7 +631,7 @@ getResultsMatrix <- eventReactive(input$run, {
     bitesNonRabid <- bitesPerNonRabid * (censusVector['abundance'] - censusVector['infective'])
     bitesRabid <- bitesPerRabid * (censusVector['infective'])
     censusVector['PEPs'] <- PEPperNonRabidBite * bitesNonRabid + PEPperRabidBite * bitesRabid
-    censusVector['lifeLoss'] <- lifeLossPerRabidBite * bitesRabid
+    censusVector['lifeLoss'] <- lifeLossPerRabidBite * ((1 - PEPperRabidBite) * bitesRabid)
     
     return(censusVector)
   }
