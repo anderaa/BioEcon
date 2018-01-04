@@ -306,38 +306,23 @@ InitialPopulation <- function() {
   
   popMatrix <- matrix(0, nrow=initialPopSize, ncol=length(traitList))
   colnames(popMatrix) <- traitList                 
-  popMatrix[, 'age'] <- c(sample(seq(1, maxPuppyAge), 
-                                 initialPuppies, replace=TRUE),
-                          sample(seq(maxPuppyAge + 1, maxJuvAge), 
-                                 initialJuveniles, replace=TRUE),
-                          sample(seq(maxJuvAge + 1, maxAge), 
-                                 initialAdults, replace=TRUE))
-  popMatrix[, 'female'] <- sample(c(0, 1), initialPopSize, 
-                                  replace=TRUE, 
-                                  prob=c(1-initialFracFemale, 
-                                         initialFracFemale))
-  popMatrix[, 'contracepted'] <- sample(c(0, 1), initialPopSize, 
-                                        replace=TRUE, 
-                                        prob=c(1-initialFracContra, 
-                                               initialFracContra))
-  popMatrix[, 'sterilized'] <- sample(c(0, 1), initialPopSize, 
-                                      replace=TRUE, 
-                                      prob=c(1-initialFracSter, 
-                                             initialFracSter))
-  popMatrix[, 'vaccinated'] <- sample(c(0, 1), initialPopSize, 
-                                      replace=TRUE, 
-                                      prob=c(1-initialFracVacc, 
-                                             initialFracVacc))
-  popMatrix[, 'immune'] <- sample(c(0, 1), initialPopSize, 
-                                  replace=TRUE, 
-                                  prob=c(1-initialFracImmune, 
-                                         initialFracImmune))
+  popMatrix[, 'age'] <- c(sample(seq(1, maxPuppyAge), initialPuppies, replace=TRUE),
+                          sample(seq(maxPuppyAge + 1, maxJuvAge), initialJuveniles, replace=TRUE),
+                          sample(seq(maxJuvAge + 1, maxAge), initialAdults, replace=TRUE))
+  popMatrix[, 'female'] <- sample(c(0, 1), initialPopSize, replace=TRUE, 
+                                  prob=c(1-initialFracFemale, initialFracFemale))
+  popMatrix[, 'contracepted'] <- sample(c(0, 1), initialPopSize, replace=TRUE, 
+                                        prob=c(1-initialFracContra, initialFracContra))
+  popMatrix[, 'sterilized'] <- sample(c(0, 1), initialPopSize, replace=TRUE, 
+                                      prob=c(1-initialFracSter, initialFracSter))
+  popMatrix[, 'vaccinated'] <- sample(c(0, 1), initialPopSize, replace=TRUE, 
+                                      prob=c(1-initialFracVacc, initialFracVacc))
+  popMatrix[, 'immune'] <- sample(c(0, 1), initialPopSize, replace=TRUE, 
+                                  prob=c(1-initialFracImmune, initialFracImmune))
   popMatrix[popMatrix[, 'contracepted']==1, 'timeContra'] <- 
-    vapply(popMatrix[popMatrix[, 'contracepted']==1, 'age'], sample, 
-           size=1, FUN.VALUE=0) 
+    vapply(popMatrix[popMatrix[, 'contracepted']==1, 'age'], sample, size=1, FUN.VALUE=0) 
   popMatrix[popMatrix[, 'vaccinated']==1, 'timeVacc'] <- 
-    vapply(popMatrix[popMatrix[, 'vaccinated']==1, 'age'], 
-           sample, size=1, FUN.VALUE=0)
+    vapply(popMatrix[popMatrix[, 'vaccinated']==1, 'age'], sample, size=1, FUN.VALUE=0)
   popMatrix[popMatrix[, 'age'] > maxJuvAge, 'adult'] <- 1
   popMatrix[popMatrix[, 'age'] <= maxPuppyAge, 'puppy'] <- 1
   popMatrix[, 'month'] <- 1
@@ -348,13 +333,10 @@ InitialPopulation <- function() {
 
 ########################################
 TotalCost <- function(k, dogDemoForStrategies) {
-  # Arguments: Money allocated to contact or capture,
-  #            number of dogs available for each strategy.
-  # Return:    The total cost including contact or capture and treatment 
-  #            costs.
-  # Purpose:   Calculates the total cost of management for a given year given
-  #            the amount devoted to contact or capture and current 
-  #            demographics.
+  # Arguments: Money allocated to contact or capture, number of dogs available for each strategy.
+  # Return:    The total cost including contact or capture and treatment costs.
+  # Purpose:   Calculates the total cost of management for a given year given the amount devoted to contact or 
+  #            capture and current demographics.
   
   currentAbundance <- nrow(popMatrix)
   contactAllocation <- costSequence[k]
@@ -363,7 +345,7 @@ TotalCost <- function(k, dogDemoForStrategies) {
   dogsContacted = contactMapping[k] * currentAbundance
   adjAllocation = contactAllocation * (currentAbundance / carryingCap)
   
-  demoOfContacted <- dogsContacted * pmax((dogDemoForStrategies / nrow(popMatrix)), 0, na.rm=TRUE)
+  demoOfContacted <- dogsContacted * pmax((dogDemoForStrategies / nrow(popMatrix)),  0, na.rm=TRUE)
   totalCost <- adjAllocation + sum(demoOfContacted * strategyCostVector * strategyVector)
   
   return(totalCost)
