@@ -28,6 +28,7 @@ emigrationProb     <- 0
 # inputs for reproduction
 immigrantDogs        <- 189
 expectedLittersPerFemalePerYear <- 0.31
+expLitterPer <- expectedLittersPerFemalePerYear
 meanLitterSize       <- 4.4
 femalePupProb        <- 0.38
 fractionBirthPulse   <- 0.0
@@ -46,10 +47,11 @@ birthPulseVector[11] <- 0
 birthPulseVector[12] <- 0 
 
 # inputs for disease
+monthsOfPressure      <- 1
+dogsPerMonthExposed   <- 1
 monthInitIntroduction <- 25
-sequentialMonthsIntro <- 1
-dogsPerIntro          <- 1
 transmissionParam     <- 2.15
+bitesPerRabidMean <- transmissionParam
 bitesPerRabidShape    <- 1.33
 probInfectionFromBite <- 0.49
 timeLimitExposed      <- 22 
@@ -172,6 +174,8 @@ for (i in 1:simulationYears) {
     pressureDays[[i]] <- 0
   }
 }
+print(pressureDays)
+flush.console()
 
 # Calculate demographics of initial population:
 initialAdults     <- round(initialFracAdult * initialPopSize)
@@ -1227,3 +1231,31 @@ for(i in 1:simulationEnd) {
 }
 names(resultsMatrix[1, , 1])    
 ########################################################################################################################
+
+abunMax <- max(resultsMatrix[, 'abundance', ]) * 1.1
+prevMax <- max(resultsMatrix[, 'infective', ]) * 1.1
+vaccMax <- max(resultsMatrix[, 'vaccinated', ]) * 1.1
+daySeries <- seq(1, simulationEnd)
+
+ggplot() +
+  geom_line(aes(daySeries, resultsMatrix[, 'abundance', 1]), colour = "blue") +
+  geom_line(aes(daySeries, resultsMatrix[, 'abundance', 2]), colour = "purple") +
+  geom_line(aes(daySeries, resultsMatrix[, 'abundance', 3]), colour = "green") +
+  geom_line(aes(daySeries, resultsMatrix[, 'abundance', 4]), colour = "red") +
+  geom_line(aes(daySeries, resultsMatrix[, 'abundance', 5]), colour = "orange") +
+  geom_line(aes(daySeries, apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE)), colour = "black", size=1.2) +
+  scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
+                     labels = c('1', '2', '3', '4', '5')) +
+  scale_y_continuous(limits=c(0, abunMax), expand = c(0, 0)) +
+  ylab('abundance') +
+  theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
+  theme(axis.text=element_text(size=12, color='black'), 
+        axis.title=element_text(size=14, face="bold", color='black')) +
+  xlab('') +
+  theme(panel.background = element_rect(fill = 'lightgray', colour = 'lightgray'))
+  cols <- c('sample iteration 1'='blue', 'sample iteration 2'='purple', 
+            'sample iteration 3'='green', 'sample iteration 4'='red', 
+            'sample iteration 5'='orange', 
+            'mean across all iterations'='black')
+  
+  
