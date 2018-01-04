@@ -145,6 +145,7 @@ mgtMonthVector[10] <- 0
 mgtMonthVector[11] <- 0
 mgtMonthVector[12] <- 0
 
+########################################################################################################################
 # Misc preliminary calculations and assignments:
 
 # Get total number of days in simulation:
