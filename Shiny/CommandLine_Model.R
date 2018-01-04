@@ -1232,10 +1232,12 @@ for(i in 1:simulationEnd) {
 names(resultsMatrix[1, , 1])    
 ########################################################################################################################
 
+
 abunMax <- max(resultsMatrix[, 'abundance', ]) * 1.1
 prevMax <- max(resultsMatrix[, 'infective', ]) * 1.1
 vaccMax <- max(resultsMatrix[, 'vaccinated', ]) * 1.1
 daySeries <- seq(1, simulationEnd)
+
 
 ggplot() +
   geom_line(aes(daySeries, resultsMatrix[, 'abundance', 1]), colour = "blue") +
@@ -1259,3 +1261,45 @@ ggplot() +
             'mean across all iterations'='black')
   
   
+ggplot() +
+  geom_line(aes(daySeries, resultsMatrix[, 'infective', 1]), colour = "blue") +
+  geom_line(aes(daySeries, resultsMatrix[, 'infective', 2]), colour = "purple") +
+  geom_line(aes(daySeries, resultsMatrix[, 'infective', 3]), colour = "green") +
+  geom_line(aes(daySeries, resultsMatrix[, 'infective', 4]), colour = "red") +
+  geom_line(aes(daySeries, resultsMatrix[, 'infective', 5]), colour = "orange") +
+  geom_line(aes(daySeries, apply(resultsMatrix[, 'infective', ], 1, mean, na.rm=TRUE)), colour = "black", size=1.2) +
+  scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
+                     labels = c('1', '2', '3', '4', '5')) +
+  scale_y_continuous(limits=c(0, abunMax), expand = c(0, 0)) +
+  ylab('infective') +
+  theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
+  theme(axis.text=element_text(size=12, color='black'), 
+        axis.title=element_text(size=14, face="bold", color='black')) +
+  xlab('') +
+  theme(panel.background = element_rect(fill = 'lightgray', colour = 'lightgray'))
+  cols <- c('sample iteration 1'='blue', 'sample iteration 2'='purple', 
+            'sample iteration 3'='green', 'sample iteration 4'='red', 
+            'sample iteration 5'='orange', 
+            'mean across all iterations'='black')
+  
+  
+ggplot() +
+  geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', 1]), colour = "blue") +
+  geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', 2]), colour = "purple") +
+  geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', 3]), colour = "green") +
+  geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', 4]), colour = "red") +
+  geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', 5]), colour = "orange") +
+  geom_line(aes(daySeries, apply(resultsMatrix[, 'vaccinated', ], 1, mean, na.rm=TRUE)), colour = "black", size=1.2) +
+  scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
+                     labels = c('1', '2', '3', '4', '5')) +
+  scale_y_continuous(limits=c(0, abunMax), expand = c(0, 0)) +
+  ylab('vaccinated') +
+  theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
+  theme(axis.text=element_text(size=12, color='black'), 
+        axis.title=element_text(size=14, face="bold", color='black')) +
+  xlab('') +
+  theme(panel.background = element_rect(fill = 'lightgray', colour = 'lightgray'))
+  cols <- c('sample iteration 1'='blue', 'sample iteration 2'='purple', 
+            'sample iteration 3'='green', 'sample iteration 4'='red', 
+            'sample iteration 5'='orange', 
+            'mean across all iterations'='black')
