@@ -1185,6 +1185,8 @@ TimeFunction <- function() {
 ########################################################################################################################
   # Loop through iterations:
 for(i in 1:iterations) {
+  print(paste('Running iteration', i))
+  flush.console()
   popMatrix <- InitialPopulation()
   
   # Loop through years:
