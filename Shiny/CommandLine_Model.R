@@ -6,10 +6,10 @@ simulationEnd   <- 365 * simulationYears
 iterations      <- 5
 
 # inputs for initial population
-initialPopSize    <- 600
+initialPopSize    <- 404
 initialFracAdult  <- 0.49
-initialFracPup    <- 0.5
-initialFracFemale <- 0.3847
+initialFracPup    <- 0.39
+initialFracFemale <- 0.38
 initialFracImmune <- 0.0
 initialFracContra <- 0.0
 initialFracVacc   <- 0.0
@@ -19,25 +19,25 @@ initialFracSter   <- 0.0
 maxJuvAge          <- 299
 maxPuppyAge        <- 89
 maxAge             <- 4000
-carryingCap        <- 800
-pupAnnMortProb     <- 0.75
-juvAnnMortProb     <- 0.75
-adultAnnMortProb   <- 0.3
+carryingCap        <- 577
+pupAnnMortProb     <- 0.90
+juvAnnMortProb     <- 0.63
+adultAnnMortProb   <- 0.32
 emigrationProb     <- 0
 
 # inputs for reproduction
-immigrantDogs        <- 195
-expectedLittersPerFemalePerYear <- 0.28
-meanLitterSize       <- 4.52
-femalePupProb        <- 0.3847
-fractionBirthPulse   <- 0.5
+immigrantDogs        <- 189
+expectedLittersPerFemalePerYear <- 0.31
+meanLitterSize       <- 4.4
+femalePupProb        <- 0.38
+fractionBirthPulse   <- 0.0
 birthPulseVector     <- rep(0, 12)
 birthPulseVector[1]  <- 0 
 birthPulseVector[2]  <- 0 
 birthPulseVector[3]  <- 0
-birthPulseVector[4]  <- 1 
-birthPulseVector[5]  <- 1 
-birthPulseVector[6]  <- 1 
+birthPulseVector[4]  <- 0 
+birthPulseVector[5]  <- 0 
+birthPulseVector[6]  <- 0 
 birthPulseVector[7]  <- 0
 birthPulseVector[8]  <- 0
 birthPulseVector[9]  <- 0 
@@ -46,49 +46,53 @@ birthPulseVector[11] <- 0
 birthPulseVector[12] <- 0 
 
 # inputs for disease
-annualIntroProb    <- 0.0
-timeLimitExposed   <- 25 
-timeLimitInfective <- 5
-survivalProb       <- 0
-transmissionParam  <- 0.25
+monthInitIntroduction <- 25
+sequentialMonthsIntro <- 1
+dogsPerIntro          <- 1
+transmissionParam     <- 2.15
+bitesPerRabidShape    <- 1.33
+probInfectionFromBite <- 0.49
+timeLimitExposed      <- 22 
+timeLimitInfective    <- 3
+survivalProb          <- 0
 
 # inputs for benefits of management
-bitesPerNonRabid     <- 0 
-bitesPerRabid        <- 0  
-PEPperNonRabidBite   <- 0
-PEPperRabidBite      <- 0
-costPerPEP           <- 0
-lifeLossPerRabidBite <- 0
+bitesPerNonRabid     <- 0.00017 
+bitesPerRabid        <- 0.06756  
+PEPperNonRabidBite   <- 0.991
+PEPperRabidBite      <- 0.991
+costPerPEP           <- 754.92
+lifeLossPerRabidBite <- 0.19
 
 # inputs for treatment costs
-vaccineCost             <- 1000
-contraceptionCostFemale <- 0
-contraceptionCostMale   <- 0
-sterilizationCostFemale <- 0
-sterilizationCostMale   <- 0
-euthanasiaCost          <- 0
+vaccineCost             <- 2.426
+contraceptionCostFemale <- 150
+contraceptionCostMale   <- 150
+sterilizationCostFemale <- 300
+sterilizationCostMale   <- 200
+euthanasiaCost          <- 150
 
 # inputs for effectiveness of contraception and vaccination
-timeVaccineEffective       <- 2
-timeBoosterEffective       <- 5
-timeContraEffectiveMales   <- 2
-timeContraEffectiveFemales <- 2
+timeVaccineEffective       <- 730
+timeBoosterEffective       <- 1095
+timeContraEffectiveMales   <- 730
+timeContraEffectiveFemales <- 730
 
 # inputs for contact costs
 # note: 25, 50, 75, 100, mean 25% 50%, 75%, 100% of specified 
 #       initial abundance
-contactCost25  <- 0
-contactCost50  <- 0
-contactCost75  <- 0
-contactCost100 <- 0
+contactCost25  <- 1019.09
+contactCost50  <- 2757.3
+contactCost75  <- 4735.89
+contactCost100 <- 8453.7
 
 # input for budget years 1-5    
 annualBudget     <- rep(0, 5)
 annualBudget[1]  <- 0
-annualBudget[2]  <- 4000
-annualBudget[3]  <- 4000
-annualBudget[4]  <- 4000
-annualBudget[5]  <- 4000
+annualBudget[2]  <- 0
+annualBudget[3]  <- 0
+annualBudget[4]  <- 0
+annualBudget[5]  <- 0
 
 # inputs for strategy
 # note: model assumes already sterilized dogs are not re-sterilized. 
@@ -99,12 +103,12 @@ annualBudget[5]  <- 4000
 #       demographic
 # note: if euthanisia equal 1 for some demographic, 
 #       all other treatments must equal zero  
-vaccPuppyMale     <- 1
-vaccPuppyFemale   <- 1
-vaccAdultMale     <- 1
-vaccAdultFemale   <- 1
-vaccJuvMale       <- 1
-vaccJuvFemale     <- 1
+vaccPuppyMale     <- 0
+vaccPuppyFemale   <- 0
+vaccAdultMale     <- 0
+vaccAdultFemale   <- 0
+vaccJuvMale       <- 0
+vaccJuvFemale     <- 0
 contraPuppyMale   <- 0
 contraPuppyFemale <- 0
 contraAdultMale   <- 0
@@ -130,7 +134,7 @@ boosterGiven <- TRUE
 # inputs for management timing
 mgtMonthVector     <- rep(0, 12)
 mgtMonthVector[1]  <- 0 
-mgtMonthVector[2]  <- 1 
+mgtMonthVector[2]  <- 0 
 mgtMonthVector[3]  <- 0
 mgtMonthVector[4]  <- 0
 mgtMonthVector[5]  <- 0
@@ -144,13 +148,32 @@ mgtMonthVector[12] <- 0
 
 
 
-########################################
 # Misc preliminary calculations and assignments:
+
+# Get total number of days in simulation:
+simulationEnd   <- 365 * simulationYears
 
 # A vector of month number for use in seasonal timing:
 monthSeries <- c(rep(1, 31), rep(2, 28), rep(3, 31), rep(4, 30), 
                  rep(5, 31), rep(6, 30), rep(7, 31), rep(8, 31),
                  rep(9, 30), rep(10, 31), rep(11, 30), rep(12, 31)) 
+
+monthFirstDays <- rep(c(match(1, monthSeries), match(2, monthSeries), match(3, monthSeries), match(4, monthSeries),
+                        match(5, monthSeries), match(6, monthSeries), match(7, monthSeries), match(8, monthSeries),
+                        match(9, monthSeries), match(10, monthSeries), match(11, monthSeries), match(12, monthSeries)),
+                      simulationYears)
+
+# Get days of each year that disease will be introduced:
+pressureMonths <- seq(monthInitIntroduction, monthInitIntroduction + monthsOfPressure - 1)  
+pressureYears <- (pressureMonths - 1) %/% 12 + 1
+pressureDays <- list()
+for (i in 1:simulationYears) {
+  if (sum(pressureYears == i) > 0) {
+    pressureDays[[i]] <- monthFirstDays[pressureMonths[pressureYears == i]]
+  } else {
+    pressureDays[[i]] <- 0
+  }
+}
 
 # Calculate demographics of initial population:
 initialAdults     <- round(initialFracAdult * initialPopSize)
@@ -167,11 +190,9 @@ adultMortalityProb <- 1 - (1 - adultAnnMortProb) ^ (1/365)
 monthDayCount <- c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
 if(sum(birthPulseVector) != 12 & sum(birthPulseVector != 0)) {
   peakDays <- sum(birthPulseVector * monthDayCount)
-  peakProb <- (fractionBirthPulse * expectedLittersPerFemalePerYear) / 
-    peakDays
+  peakProb <- (fractionBirthPulse * expLitterPer) / peakDays
   offPeakDays <- sum((!birthPulseVector) * monthDayCount)
-  offPeakProb <- ((1-fractionBirthPulse) * expectedLittersPerFemalePerYear) / 
-    offPeakDays
+  offPeakProb <- ((1-fractionBirthPulse) * expLitterPer) / offPeakDays
   litterProbability <- rep(offPeakProb, 365)
   for(m in 1:12) {
     if(birthPulseVector[m] == 1) {
@@ -179,11 +200,8 @@ if(sum(birthPulseVector) != 12 & sum(birthPulseVector != 0)) {
     }
   }
 } else {
-  litterProbability <- rep(expectedLittersPerFemalePerYear / 365, 365)
+  litterProbability <- rep(expLitterPer / 365, 365)
 }
-
-# Calculate daily probability of disease introduction:
-exogenousIntroProb <- 1 - (1 - annualIntroProb) ^ (1/365)
 
 # Calculate contact costs at carrying capacity:
 contactCost25k <- contactCost25 * (carryingCap / initialPopSize)
@@ -224,8 +242,7 @@ censusVector <- rep(0, length(censusSeries))
 names(censusVector) <- censusSeries
 
 # Create a 3d array to store results:
-resultsMatrix <- array(data=NA, 
-                       dim=c(simulationEnd, length(censusSeries), iterations))
+resultsMatrix <- array(data=NA, dim=c(simulationEnd, length(censusSeries), iterations))
 colnames(resultsMatrix) <- censusSeries
 
 # Create a vector of binary strategy indicators:
@@ -273,12 +290,12 @@ contactMapping <- c(seq(0.0, 0.25, length.out=min(10000, (contactCost25k + 1)*10
                     seq(0.75, 1.0, length.out=min(10000, ((contactCost100k - contactCost75k + 1)*10000)))[-1])
 
 costSequence <- c(seq(0.0, contactCost25k, length.out=min(10000, (contactCost25k + 1)*10000)),
-                    seq(contactCost25k, contactCost50k, 
-                        length.out=min(10000, ((contactCost50k - contactCost25k + 1)*10000)))[-1],
-                    seq(contactCost50k, contactCost75k, 
-                        length.out=min(10000, ((contactCost75k - contactCost50k + 1)*10000)))[-1],
-                    seq(contactCost75k, contactCost100k, 
-                        length.out=min(10000, ((contactCost100k - contactCost75k + 1)*10000)))[-1])
+                  seq(contactCost25k, contactCost50k, 
+                      length.out=min(10000, ((contactCost50k - contactCost25k + 1)*10000)))[-1],
+                  seq(contactCost50k, contactCost75k, 
+                      length.out=min(10000, ((contactCost75k - contactCost50k + 1)*10000)))[-1],
+                  seq(contactCost75k, contactCost100k, 
+                      length.out=min(10000, ((contactCost100k - contactCost75k + 1)*10000)))[-1])
 ########################################
 
 ########################################
