@@ -1,9 +1,15 @@
 rm(list=ls())
 
+# load required packages
+library(ggplot2)
+library(gridExtra)
+library(gtable)
+library(grid)
+
 # inputs for simulation
 simulationYears <- 5
 simulationEnd   <- 365 * simulationYears
-iterations      <- 5
+iterations      <- 25
 
 # inputs for initial population
 initialPopSize    <- 404
@@ -89,7 +95,7 @@ contactCost75  <- 4735.89
 contactCost100 <- 8453.7
 
 # input for budget years 1-5    
-annualBudget     <- rep(0, 5)
+annualBudget     <- rep(0, simulationYears)
 annualBudget[1]  <- 0
 annualBudget[2]  <- 0
 annualBudget[3]  <- 0
@@ -1238,14 +1244,32 @@ prevMax <- max(resultsMatrix[, 'infective', ]) * 1.1
 vaccMax <- max(resultsMatrix[, 'vaccinated', ]) * 1.1
 daySeries <- seq(1, simulationEnd)
 
+quant0   <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.0)
+quant10  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.1)
+quant20  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.2)
+quant30  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.3)
+quant40  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.4)
+quant50  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.5)
+quant60  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.6)
+quant70  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.7)
+quant80  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.8)
+quant90  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.9)
+quant100 <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 1.0)
+
+cols <- c('sample iteration 1'='blue', 'sample iteration 2'='purple', 
+          'sample iteration 3'='green', 'sample iteration 4'='red', 
+          'sample iteration 5'='orange', 
+          'mean across all iterations'='black')
 
 ggplot() +
-  geom_line(aes(daySeries, resultsMatrix[, 'abundance', 1]), colour = "blue") +
-  geom_line(aes(daySeries, resultsMatrix[, 'abundance', 2]), colour = "purple") +
-  geom_line(aes(daySeries, resultsMatrix[, 'abundance', 3]), colour = "green") +
-  geom_line(aes(daySeries, resultsMatrix[, 'abundance', 4]), colour = "red") +
-  geom_line(aes(daySeries, resultsMatrix[, 'abundance', 5]), colour = "orange") +
-  geom_line(aes(daySeries, apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE)), colour = "black", size=1.2) +
+  geom_line(aes(daySeries, quant50), colour = "blue") +
+  geom_ribbon(aes(x=daySeries, ymax=quant60, ymin=quant40), fill='blue', alpha=0.82) +
+  geom_ribbon(aes(x=daySeries, ymax=quant70, ymin=quant30), fill='blue', alpha=0.68) +
+  geom_ribbon(aes(x=daySeries, ymax=quant80, ymin=quant20), fill='blue', alpha=0.54) +
+  geom_ribbon(aes(x=daySeries, ymax=quant90, ymin=quant100), fill='blue', alpha=0.40) +
+  geom_ribbon(aes(x=daySeries, ymax=quant100, ymin=quant0), fill='blue', alpha=0.26) +
+
+  geom_line(aes(daySeries, apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE)), colour = "black", size=1.0) +
   scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
                      labels = c('1', '2', '3', '4', '5')) +
   scale_y_continuous(limits=c(0, abunMax), expand = c(0, 0)) +
@@ -1254,52 +1278,15 @@ ggplot() +
   theme(axis.text=element_text(size=12, color='black'), 
         axis.title=element_text(size=14, face="bold", color='black')) +
   xlab('') +
-  theme(panel.background = element_rect(fill = 'lightgray', colour = 'lightgray'))
-  cols <- c('sample iteration 1'='blue', 'sample iteration 2'='purple', 
-            'sample iteration 3'='green', 'sample iteration 4'='red', 
-            'sample iteration 5'='orange', 
-            'mean across all iterations'='black')
+  theme(panel.background = element_rect(fill = 'white', colour = 'black')) +
   
+  scale_colour_manual(values=c("black", "blue"), 
+                    name="Experimental\nCondition",
+                    breaks=c("mean", "quantiles"),
+                    labels=c("mean", "quantiles")) +
   
-ggplot() +
-  geom_line(aes(daySeries, resultsMatrix[, 'infective', 1]), colour = "blue") +
-  geom_line(aes(daySeries, resultsMatrix[, 'infective', 2]), colour = "purple") +
-  geom_line(aes(daySeries, resultsMatrix[, 'infective', 3]), colour = "green") +
-  geom_line(aes(daySeries, resultsMatrix[, 'infective', 4]), colour = "red") +
-  geom_line(aes(daySeries, resultsMatrix[, 'infective', 5]), colour = "orange") +
-  geom_line(aes(daySeries, apply(resultsMatrix[, 'infective', ], 1, mean, na.rm=TRUE)), colour = "black", size=1.2) +
-  scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
-                     labels = c('1', '2', '3', '4', '5')) +
-  scale_y_continuous(limits=c(0, abunMax), expand = c(0, 0)) +
-  ylab('infective') +
-  theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
-  theme(axis.text=element_text(size=12, color='black'), 
-        axis.title=element_text(size=14, face="bold", color='black')) +
-  xlab('') +
-  theme(panel.background = element_rect(fill = 'lightgray', colour = 'lightgray'))
-  cols <- c('sample iteration 1'='blue', 'sample iteration 2'='purple', 
-            'sample iteration 3'='green', 'sample iteration 4'='red', 
-            'sample iteration 5'='orange', 
-            'mean across all iterations'='black')
+  theme(legend.text.align=0) + 
+  theme(legend.position='bottom') 
   
-  
-ggplot() +
-  geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', 1]), colour = "blue") +
-  geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', 2]), colour = "purple") +
-  geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', 3]), colour = "green") +
-  geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', 4]), colour = "red") +
-  geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', 5]), colour = "orange") +
-  geom_line(aes(daySeries, apply(resultsMatrix[, 'vaccinated', ], 1, mean, na.rm=TRUE)), colour = "black", size=1.2) +
-  scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
-                     labels = c('1', '2', '3', '4', '5')) +
-  scale_y_continuous(limits=c(0, abunMax), expand = c(0, 0)) +
-  ylab('vaccinated') +
-  theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
-  theme(axis.text=element_text(size=12, color='black'), 
-        axis.title=element_text(size=14, face="bold", color='black')) +
-  xlab('') +
-  theme(panel.background = element_rect(fill = 'lightgray', colour = 'lightgray'))
-  cols <- c('sample iteration 1'='blue', 'sample iteration 2'='purple', 
-            'sample iteration 3'='green', 'sample iteration 4'='red', 
-            'sample iteration 5'='orange', 
-            'mean across all iterations'='black')
+
+
