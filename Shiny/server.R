@@ -5,7 +5,26 @@
 # Description:        This code is the backend of a web app that can be used
 #                     to forecast the results of canine rabies management
 #                     in South Africa
+
+# MIT License
+# Copyright (c) 2017 Aaron Anderson
+# Permission is hereby granted, free of charge, to any person obtaining a copy
+# of this software and associated documentation files (the "Software"), to deal
+# in the Software without restriction, including without limitation the rights
+# to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+# copies of the Software, and to permit persons to whom the Software is
+# furnished to do so, subject to the following conditions:
+# The above copyright notice and this permission notice shall be included in all
+# copies or substantial portions of the Software.
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+# IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+# FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+# AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+# LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+# OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+# SOFTWARE.
 ########################################################################################################################
+
 
 ########################################################################################################################
 # Note to user: install the following five packages:
@@ -311,16 +330,6 @@ getResultsMatrix <- eventReactive(input$run, {
   names(strategyCostVector) <- strategyNames
   
   # Create a mapping between cost and number of dogs contacted:
-  #contactMapping <- c(seq(0.0, 0.25, length.out=(contactCost25k + 1)*10000),
-  #                    seq(0.25, 0.5, length.out=((contactCost50k - contactCost25k + 1)*10000))[-1],
-  #                    seq(0.5, 0.75, length.out=((contactCost75k - contactCost50k + 1)*10000))[-1],
-  #                    seq(0.75, 1.0, length.out=((contactCost100k - contactCost75k + 1)*10000))[-1])
-  
-  #costSequence <- c(seq(0.0, contactCost25k, length.out=(contactCost25k + 1)*10000),
-  #                  seq(contactCost25k, contactCost50k, length.out=((contactCost50k - contactCost25k + 1)*10000))[-1],
-  #                  seq(contactCost50k, contactCost75k, length.out=((contactCost75k - contactCost50k + 1)*10000))[-1],
-  #                  seq(contactCost75k, contactCost100k, length.out=((contactCost100k - contactCost75k + 1)*10000))[-1])
-  
   contactMapping <- c(seq(0.0, 0.25, length.out=min(10000, (contactCost25k + 1)*10000)),
                       seq(0.25, 0.5, length.out=min(10000, ((contactCost50k - contactCost25k + 1)*10000)))[-1],
                       seq(0.5, 0.75, length.out=min(10000, ((contactCost75k - contactCost50k + 1)*10000)))[-1],
@@ -1307,13 +1316,27 @@ output$graphicalResults <- renderPlot({
   daySeries       <- seq(1, simulationEnd)
   
   # Construct abundance plot:
+  quant0abun   <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.0)
+  quant10abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.1)
+  quant20abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.2)
+  quant30abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.3)
+  quant40abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.4)
+  quant50abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.5)
+  quant60abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.6)
+  quant70abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.7)
+  quant80abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.8)
+  quant90abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.9)
+  quant100abun <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 1.0)
+  meanAbun = apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE)
+  
   abundPlot <- ggplot() +
-    geom_line(aes(daySeries, resultsMatrix[, 'abundance', i]), colour = "blue") +
-    geom_line(aes(daySeries, resultsMatrix[, 'abundance', i-1]), colour = "purple") +
-    geom_line(aes(daySeries, resultsMatrix[, 'abundance', i-2]), colour = "green") +
-    geom_line(aes(daySeries, resultsMatrix[, 'abundance', i-3]), colour = "red") +
-    geom_line(aes(daySeries, resultsMatrix[, 'abundance', i-4]), colour = "orange") +
-    geom_line(aes(daySeries, apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE)), colour = "black", size=1.2) +
+    geom_ribbon(aes(x=daySeries, ymax=quant100abun, ymin=quant0abun, fill='full range  ')) +
+    geom_ribbon(aes(x=daySeries, ymax=quant90abun, ymin=quant10abun, fill='percentile 10 to 90  ')) +
+    geom_ribbon(aes(x=daySeries, ymax=quant80abun, ymin=quant20abun, fill='percentile 20 to 80  ')) +
+    geom_ribbon(aes(x=daySeries, ymax=quant70abun, ymin=quant30abun, fill='percentile 30 to 70  ')) +
+    geom_ribbon(aes(x=daySeries, ymax=quant60abun, ymin=quant40abun, fill='percentile 40 to 60  ')) +
+    geom_line(aes(daySeries, quant50abun, colour = 'median  ')) +
+    geom_line(aes(daySeries, meanAbun, colour = 'mean  '), size=1.0) +
     scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
                        labels = c('1', '2', '3', '4', '5')) +
     scale_y_continuous(limits=c(0, abunMax), expand = c(0, 0)) +
@@ -1322,20 +1345,43 @@ output$graphicalResults <- renderPlot({
     theme(axis.text=element_text(size=12, color='black'), 
           axis.title=element_text(size=14, face="bold", color='black')) +
     xlab('') +
-    theme(panel.background = element_rect(fill = 'lightgray', colour = 'lightgray'))
-    cols <- c('sample iteration 1'='blue', 'sample iteration 2'='purple', 
-              'sample iteration 3'='green', 'sample iteration 4'='red', 
-              'sample iteration 5'='orange', 
-              'mean across all iterations'='black')
-  
+    theme(axis.line = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_rect(fill=NA, colour='black'),
+          panel.background = element_blank()) +
+    scale_colour_manual(name=NULL, values=c('median  '='#1B4F72',
+                                            'mean  '='black')) +
+    scale_fill_manual(name=NULL, values=c('full range  '='#5DADE2', 
+                                          'percentile 10 to 90  '='#3498DB', 
+                                          'percentile 20 to 80  '='#2E86C1', 
+                                          'percentile 30 to 70  '='#2874A6', 
+                                          'percentile 40 to 60  '='#21618C')) +
+    theme(legend.text.align=0) + 
+    theme(legend.position='none') 
+
   # Construct the disease prevalence plot:
+  quant0inf   <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.0)
+  quant10inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.1)
+  quant20inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.2)
+  quant30inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.3)
+  quant40inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.4)
+  quant50inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.5)
+  quant60inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.6)
+  quant70inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.7)
+  quant80inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.8)
+  quant90inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.9)
+  quant100inf <- apply(resultsMatrix[, 'infective', ], 1, quantile, 1.0)
+  meanInf = apply(resultsMatrix[, 'infective', ], 1, mean, na.rm=TRUE)
+  
   infectPlot <- ggplot() +
-    geom_line(aes(daySeries, resultsMatrix[, 'infective', i]), colour = "blue") +
-    geom_line(aes(daySeries, resultsMatrix[, 'infective', i-1]), colour = "purple") +
-    geom_line(aes(daySeries, resultsMatrix[, 'infective', i-2]), colour = "green") +
-    geom_line(aes(daySeries, resultsMatrix[, 'infective', i-3]), colour = "red") +
-    geom_line(aes(daySeries, resultsMatrix[, 'infective', i-4]), colour = "orange") +
-    geom_line(aes(daySeries, apply(resultsMatrix[, 'infective', ], 1, mean, na.rm=TRUE)), colour = "black", size=1.2) +
+    geom_ribbon(aes(x=daySeries, ymax=quant100inf, ymin=quant0inf, fill='full range  ')) +
+    geom_ribbon(aes(x=daySeries, ymax=quant90inf, ymin=quant10inf, fill='percentile 10 to 90  ')) +
+    geom_ribbon(aes(x=daySeries, ymax=quant80inf, ymin=quant20inf, fill='percentile 20 to 80  ')) +
+    geom_ribbon(aes(x=daySeries, ymax=quant70inf, ymin=quant30inf, fill='percentile 30 to 70  ')) +
+    geom_ribbon(aes(x=daySeries, ymax=quant60inf, ymin=quant40inf, fill='percentile 40 to 60  ')) +
+    geom_line(aes(daySeries, quant50inf, colour = 'median  ')) +
+    geom_line(aes(daySeries, meanInf, colour = 'mean  '), size=1.0) +
     scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
                        labels = c('1', '2', '3', '4', '5')) +
     scale_y_continuous(limits=c(0, prevMax), expand = c(0, 0)) +
@@ -1344,32 +1390,69 @@ output$graphicalResults <- renderPlot({
     theme(axis.text=element_text(size=12, color='black'), 
           axis.title=element_text(size=14, face="bold", color='black')) +
     xlab('') +
-    theme(panel.background = element_rect(fill = 'lightgray', colour = 'lightgray'))
-  
+    theme(axis.line = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_rect(fill=NA, colour='black'),
+          panel.background = element_blank()) +
+    scale_colour_manual(name=NULL, values=c('median  '='#1B4F72',
+                                            'mean  '='black')) +
+    scale_fill_manual(name=NULL, values=c('full range  '='#5DADE2', 
+                                          'percentile 10 to 90  '='#3498DB', 
+                                          'percentile 20 to 80  '='#2E86C1', 
+                                          'percentile 30 to 70  '='#2874A6', 
+                                          'percentile 40 to 60  '='#21618C')) +
+    theme(legend.text.align=0) + 
+    theme(legend.position='none') 
+    
   # Construct the vaccination plot:
-  vaccPlot <- ggplot() + 
-    geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', i], colour = 'sample iteration 1')) +
-    geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', i-1], colour = 'sample iteration 2')) +
-    geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', i-2], colour = 'sample iteration 3')) +
-    geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', i-3], colour = 'sample iteration 4')) +
-    geom_line(aes(daySeries, resultsMatrix[, 'vaccinated', i-4], colour = 'sample iteration 5')) +
-    geom_line(aes(daySeries, apply(resultsMatrix[, 'vaccinated', ], 1, mean, na.rm=TRUE), 
-                  colour = 'mean across all iterations'), size=1.2) +
+  quant0vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.0)
+  quant10vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.1)
+  quant20vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.2)
+  quant30vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.3)
+  quant40vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.4)
+  quant50vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.5)
+  quant60vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.6)
+  quant70vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.7)
+  quant80vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.8)
+  quant90vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.9)
+  quant100vac <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 1.0)
+  meanVac = apply(resultsMatrix[, 'vaccinated', ], 1, mean, na.rm=TRUE)
+  
+  vaccPlot <- ggplot() +
+    geom_ribbon(aes(x=daySeries, ymax=quant100vac, ymin=quant0vac, fill='full range  ')) +
+    geom_ribbon(aes(x=daySeries, ymax=quant90vac, ymin=quant10vac, fill='percentile 10 to 90  ')) +
+    geom_ribbon(aes(x=daySeries, ymax=quant80vac, ymin=quant20vac, fill='percentile 20 to 80  ')) +
+    geom_ribbon(aes(x=daySeries, ymax=quant70vac, ymin=quant30vac, fill='percentile 30 to 70  ')) +
+    geom_ribbon(aes(x=daySeries, ymax=quant60vac, ymin=quant40vac, fill='percentile 40 to 60  ')) +
+    geom_line(aes(daySeries, quant50vac, colour = 'median  ')) +
+    geom_line(aes(daySeries, meanVac, colour = 'mean  '), size=1.0) +
     scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
                        labels = c('1', '2', '3', '4', '5')) +
     scale_y_continuous(limits=c(0, vaccMax), expand = c(0, 0)) +
-    ylab('vaccine immunity') +
+    ylab('vaccinated dogs in population') +
     theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
     theme(axis.text=element_text(size=12, color='black'), 
           axis.title=element_text(size=14, face="bold", color='black')) +
     xlab('year') +
-    theme(panel.background = element_rect(fill = 'lightgray', colour = 'lightgray')) +
-    scale_colour_manual(name=NULL, values=cols, labels=c('mean result    ', rep('sample iteration    ', 5))) +
+    theme(axis.line = element_blank(),
+          panel.grid.major = element_blank(),
+          panel.grid.minor = element_blank(),
+          panel.border = element_rect(fill=NA, colour='black'),
+          panel.background = element_blank()) +
+    scale_colour_manual(name=NULL, values=c('median  '='#1B4F72',
+                                            'mean  '='black')) +
+    scale_fill_manual(name=NULL, values=c('full range  '='#5DADE2', 
+                                          'percentile 10 to 90  '='#3498DB', 
+                                          'percentile 20 to 80  '='#2E86C1', 
+                                          'percentile 30 to 70  '='#2874A6', 
+                                          'percentile 40 to 60  '='#21618C')) +
     theme(legend.text.align=0) + 
     theme(legend.position='bottom') 
   
   # Put the three plots together:
   grid.draw(rbind(ggplotGrob(abundPlot), ggplotGrob(infectPlot), ggplotGrob(vaccPlot)))
+  #grid.draw(abundPlot)
 })  # close renderPlot
 ########################################################################################################################
 

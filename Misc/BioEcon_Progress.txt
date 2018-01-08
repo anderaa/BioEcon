@@ -81,6 +81,8 @@ the prob of a non-rabid bite receiving PEP is
 
 
 3-1-2018: Starting running model locally with finalized parameters
+          Hosted app has not been updated to final params
+          Start rebuilding CL model...ported to prior to initial pop function
 
 
 
