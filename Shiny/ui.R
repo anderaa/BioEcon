@@ -80,7 +80,7 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
               ),  # close column
               column(1),
               column(4, 
-                sliderInput('expectedLittersPerFemalePerYear', label='annual litters per fertile female', 
+                sliderInput('expectedLittersPFY', label='annual litters per fertile female', 
                             min=0, max=1, value=0.31, step=0.01, ticks=FALSE), 
                 br(),
                 tags$b('If there is a birth pulse, check the months of occurrence, otherwise ignore the inputs below.'),

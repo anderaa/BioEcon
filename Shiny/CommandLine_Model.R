@@ -63,8 +63,8 @@ emigrationProb     <- 0
 
 # inputs for reproduction
 immigrantDogs        <- 189
-expectedLittersPerFemalePerYear <- 0.31
-expLitterPer <- expectedLittersPerFemalePerYear
+expectedLittersPFY <- 0.31
+expLitterPer <- expectedLittersPFY
 meanLitterSize       <- 4.4
 femalePupProb        <- 0.38
 fractionBirthPulse   <- 0.0

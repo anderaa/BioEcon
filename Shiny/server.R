@@ -84,7 +84,7 @@ getResultsMatrix <- eventReactive(input$run, {
   
   # Inputs for reproduction:
   immigrantDogs        <- input$immigrantDogs
-  expLitterPer         <- input$expectedLittersPerFemalePerYear
+  expLitterPer         <- input$expectedLittersPFY
   meanLitterSize       <- 4.4
   femalePupProb        <- 0.38
   fractionBirthPulse   <- input$fractionBirthPulse
