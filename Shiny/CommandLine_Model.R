@@ -39,7 +39,7 @@ library(grid)
 # inputs for simulation
 simulationYears <- 5
 simulationEnd   <- 365 * simulationYears
-iterations      <- 25
+iterations      <- 50
 
 # inputs for initial population
 initialPopSize    <- 404
@@ -95,8 +95,8 @@ timeLimitInfective    <- 3
 survivalProb          <- 0
 
 # inputs for benefits of management
-bitesPerNonRabid     <- 0.00017 
-bitesPerRabid        <- 0.06756  
+bitesPerNonRabid     <- 0.00017/3 
+bitesPerRabid        <- 0.06756/3 
 PEPperNonRabidBite   <- 0.991
 PEPperRabidBite      <- 0.991
 costPerPEP           <- 754.92
@@ -1271,7 +1271,7 @@ names(resultsMatrix[1, , 1])
 
 ########################################################################################################################
 # Plot abundance over time
-
+plot.new()
 abunMax <- max(resultsMatrix[, 'abundance', ]) * 1.1
 daySeries <- seq(1, simulationEnd)
 
@@ -1288,7 +1288,7 @@ quant90abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.9)
 quant100abun <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 1.0)
 meanAbun = apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE)
 
-ggplot() +
+abundPlot <- ggplot() +
   geom_ribbon(aes(x=daySeries, ymax=quant100abun, ymin=quant0abun, fill='full range  ')) +
   geom_ribbon(aes(x=daySeries, ymax=quant90abun, ymin=quant10abun, fill='percentile 10 to 90  ')) +
   geom_ribbon(aes(x=daySeries, ymax=quant80abun, ymin=quant20abun, fill='percentile 20 to 80  ')) +
@@ -1303,7 +1303,7 @@ ggplot() +
   theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
   theme(axis.text=element_text(size=12, color='black'), 
         axis.title=element_text(size=14, face="bold", color='black')) +
-  xlab('year') +
+  xlab('') +
   theme(axis.line = element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -1317,7 +1317,7 @@ ggplot() +
                                         'percentile 30 to 70  '='#2874A6', 
                                         'percentile 40 to 60  '='#21618C')) +
   theme(legend.text.align=0) + 
-  theme(legend.position='bottom') 
+  theme(legend.position='none') 
 ########################################################################################################################
 
 
@@ -1340,7 +1340,7 @@ quant90inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.9)
 quant100inf <- apply(resultsMatrix[, 'infective', ], 1, quantile, 1.0)
 meanInf = apply(resultsMatrix[, 'infective', ], 1, mean, na.rm=TRUE)
 
-ggplot() +
+infectPlot <- ggplot() +
   geom_ribbon(aes(x=daySeries, ymax=quant100inf, ymin=quant0inf, fill='full range  ')) +
   geom_ribbon(aes(x=daySeries, ymax=quant90inf, ymin=quant10inf, fill='percentile 10 to 90  ')) +
   geom_ribbon(aes(x=daySeries, ymax=quant80inf, ymin=quant20inf, fill='percentile 20 to 80  ')) +
@@ -1355,7 +1355,7 @@ ggplot() +
   theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
   theme(axis.text=element_text(size=12, color='black'), 
         axis.title=element_text(size=14, face="bold", color='black')) +
-  xlab('year') +
+  xlab('') +
   theme(axis.line = element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -1369,7 +1369,7 @@ ggplot() +
                                         'percentile 30 to 70  '='#2874A6', 
                                         'percentile 40 to 60  '='#21618C')) +
   theme(legend.text.align=0) + 
-  theme(legend.position='bottom') 
+  theme(legend.position='none') 
 ########################################################################################################################
 
 
@@ -1392,7 +1392,7 @@ quant90vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.9)
 quant100vac <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 1.0)
 meanVac = apply(resultsMatrix[, 'vaccinated', ], 1, mean, na.rm=TRUE)
 
-ggplot() +
+vaccPlot <- ggplot() +
   geom_ribbon(aes(x=daySeries, ymax=quant100vac, ymin=quant0vac, fill='full range  ')) +
   geom_ribbon(aes(x=daySeries, ymax=quant90vac, ymin=quant10vac, fill='percentile 10 to 90  ')) +
   geom_ribbon(aes(x=daySeries, ymax=quant80vac, ymin=quant20vac, fill='percentile 20 to 80  ')) +
@@ -1423,3 +1423,8 @@ ggplot() +
   theme(legend.text.align=0) + 
   theme(legend.position='bottom') 
 ########################################################################################################################
+
+grid.draw(rbind(ggplotGrob(abundPlot), ggplotGrob(infectPlot), ggplotGrob(vaccPlot)))
+
+csv_data = data.frame(cbind(daySeries, meanAbun, meanInf, meanVac))
+

@@ -1,10 +1,4 @@
 
-Current objectives:
-1) Bites per rabid dog
-2) Bites per non-rabid dog
-3) PEP per rabid bite
-4) PEP per non-rabid bite
-
 
 Dog population in South Africa = 8,897,064
 (South African Companion Animal Council (SACAC, 2011)
@@ -64,10 +58,13 @@ Here is what we'll do:
                                             = 193.1028392
 4) the total number of expected non rabid bites = 190,089.2646 * (3 / 365)
                                                 = 1562.377517
-
 AND FINALLY,
 expected bites per rabid dog = 193.1028392 / 2858.164016 = 0.067561847
 expected bites per non-rabid dog = 1562.377517 / 8,894,205.836 = 0.000175662
+
+AND MORE FINALLY,
+expected bites per rabid dog per day = 0.067561847 / 3 = 0.022520616
+expected bites per non-rabid dog per day = 0.000175662 / 3 = 0.000058554
 
 During these same 3 days, 211,591 * (3 / 365) PEPs were given.
 3-day PEP total = 1739.10411
@@ -78,11 +75,6 @@ And since there were 1562.377517 non-rabid bites,
 the prob of a non-rabid bite receiving PEP is 
 1547.739196 / 1562.377517 = 0.991
 
-
-
-3-1-2018: Starting running model locally with finalized parameters
-          Hosted app has not been updated to final params
-          Start rebuilding CL model...ported to prior to initial pop function
 
 
 

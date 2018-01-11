@@ -120,8 +120,8 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
           ),  # close Disease Transmission tabPanel
 
           tabPanel('Disease Impacts',
-            numericInput('bitesPerNonRabid', label='daily bites per non-rabid', value=0.00017),
-            numericInput('bitesPerRabid', label='daily bites per rabid', value=0.06756), 
+            numericInput('bitesPerNonRabid', label='daily bites per non-rabid', value=0.00017/3),
+            numericInput('bitesPerRabid', label='daily bites per rabid', value=0.06756/3), 
             br(),
             sliderInput('PEPperNonRabidBite', label='PEP per non-rabid bite',
                         min=0.0, max=1.0, value=0.991, ticks=FALSE),
