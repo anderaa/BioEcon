@@ -29,6 +29,7 @@
 
 
 rm(list=ls())
+set.seed(1)
 
 # load required packages
 library(ggplot2)
@@ -39,7 +40,7 @@ library(grid)
 # inputs for simulation
 simulationYears <- 5
 simulationEnd   <- 365 * simulationYears
-iterations      <- 50
+iterations      <- 100
 
 # inputs for initial population
 initialPopSize    <- 404
@@ -1266,6 +1267,19 @@ for(i in 1:simulationEnd) {
   }
 }
 names(resultsMatrix[1, , 1])    
+########################################################################################################################
+
+
+########################################################################################################################
+# get some key results
+
+dogDaysOfInfection   <- round(sum(apply((resultsMatrix[, 'exposed', ] + resultsMatrix[, 'infective', ]), 
+                                        1, mean, na.rm=TRUE)))
+meanAbundance        <- round(mean(apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE)))
+totalCostOfInfection <- round(sum(apply(resultsMatrix[, 'PEPs', ], 1, mean, na.rm=TRUE))*costPerPEP)
+totalHumanDeaths     <- round(sum(apply(resultsMatrix[, 'lifeLoss', ], 1, mean, na.rm=TRUE)))
+totalBudget          <- round(sum(annualBudget[1:simulationYears]))
+totalVaccinations    <- round(sum(apply(resultsMatrix[, 'newlyVaccinated', ], 1, mean, na.rm=TRUE)))
 ########################################################################################################################
 
 
