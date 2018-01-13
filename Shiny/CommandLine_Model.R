@@ -40,7 +40,7 @@ library(grid)
 # inputs for simulation
 simulationYears <- 5
 simulationEnd   <- 365 * simulationYears
-iterations      <- 100
+iterations      <- 20
 
 # inputs for initial population
 initialPopSize    <- 404
@@ -127,11 +127,11 @@ contactCost100 <- 8453.7
 
 # input for budget years 1-5    
 annualBudget     <- rep(0, simulationYears)
-annualBudget[1]  <- 0
-annualBudget[2]  <- 0
-annualBudget[3]  <- 0
-annualBudget[4]  <- 0
-annualBudget[5]  <- 0
+annualBudget[1]  <- 1000
+annualBudget[2]  <- 1000
+annualBudget[3]  <- 1000
+annualBudget[4]  <- 1000
+annualBudget[5]  <- 1000
 
 # inputs for strategy
 # note: model assumes already sterilized dogs are not re-sterilized. 
@@ -144,10 +144,10 @@ annualBudget[5]  <- 0
 #       all other treatments must equal zero  
 vaccPuppyMale     <- 0
 vaccPuppyFemale   <- 0
-vaccAdultMale     <- 0
-vaccAdultFemale   <- 0
-vaccJuvMale       <- 0
-vaccJuvFemale     <- 0
+vaccAdultMale     <- 1
+vaccAdultFemale   <- 1
+vaccJuvMale       <- 1
+vaccJuvFemale     <- 1
 contraPuppyMale   <- 0
 contraPuppyFemale <- 0
 contraAdultMale   <- 0
@@ -174,12 +174,12 @@ mgtMonthVector     <- rep(0, 12)
 mgtMonthVector[1]  <- 0 
 mgtMonthVector[2]  <- 0 
 mgtMonthVector[3]  <- 0
-mgtMonthVector[4]  <- 0
+mgtMonthVector[4]  <- 1
 mgtMonthVector[5]  <- 0
-mgtMonthVector[6]  <- 0
+mgtMonthVector[6]  <- 1
 mgtMonthVector[7]  <- 0
 mgtMonthVector[8]  <- 0
-mgtMonthVector[9]  <- 0
+mgtMonthVector[9]  <- 1
 mgtMonthVector[10] <- 0
 mgtMonthVector[11] <- 0
 mgtMonthVector[12] <- 0
@@ -1281,6 +1281,12 @@ totalBudget          <- round(sum(annualBudget[1:simulationYears]))
 totalVaccinations    <- round(sum(apply(resultsMatrix[, 'newlyVaccinated', ], 1, mean, na.rm=TRUE)))
 
 
+# resultsMatrix[, 'infective', ] is a matrix with rows=days and columns=iterations
+# get max prevalence by iteration:
+maxPrev <- apply(resultsMatrix[, 'infective', ], 2, max, na.rm=TRUE)
+mean(maxPrev)
+mean(maxPrev[maxPrev > 1])
+sum(maxPrev == 1)/iterations
 
 ########################################################################################################################
 
@@ -1419,7 +1425,7 @@ vaccPlot <- ggplot() +
   scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
                      labels = c('1', '2', '3', '4', '5')) +
   scale_y_continuous(limits=c(0, vaccMax), expand = c(0, 0)) +
-  ylab('vaccinated dogs in population') +
+  ylab('vacc dogs in pop') +
   theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
   theme(axis.text=element_text(size=12, color='black'), 
         axis.title=element_text(size=14, face="bold", color='black')) +
