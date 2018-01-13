@@ -48,7 +48,7 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
         navlistPanel('Model Setup', widths=c(3, 9),
                      
           tabPanel('Basic Inputs',
-            sliderInput('iterations', label='number of iterations', min=5, max=100, value=5, step=1, ticks=FALSE), 
+            sliderInput('iterations', label='number of iterations', min=5, max=250, value=5, step=5, ticks=FALSE), 
             br(), 
             numericInput('initialPopSize', label='initial abundance on January 1', value=404), 
             br(),
