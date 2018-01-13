@@ -1466,8 +1466,7 @@ output$numericalResults <- renderPlot({
   simulationYears      <- 5                     
   simulationEnd        <- 365 * simulationYears
   carryingCap          <- getCarryingCapacity()
-  dogDaysOfInfection   <- round(sum(apply((resultsMatrix[, 'exposed', ] + resultsMatrix[, 'infective', ]), 
-                                          1, mean, na.rm=TRUE)))
+  dogDaysOfInfection   <- round(sum(apply((resultsMatrix[, 'infective', ]), 1, mean, na.rm=TRUE)))
   meanAbundance        <- round(mean(apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE)))
   totalCostOfInfection <- round(sum(apply(resultsMatrix[, 'PEPs', ], 1, mean, na.rm=TRUE))*costPerPEP)
   totalHumanDeaths     <- round(sum(apply(resultsMatrix[, 'lifeLoss', ], 1, mean, na.rm=TRUE)))
