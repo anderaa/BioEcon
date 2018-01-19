@@ -205,8 +205,8 @@ getResultsMatrix <- eventReactive(input$run, {
                    rep(9, 30), rep(10, 31), rep(11, 30), rep(12, 31)) 
   
   monthFirstDays <- rep(c(match(1, monthSeries), match(2, monthSeries), match(3, monthSeries), match(4, monthSeries),
-                        match(5, monthSeries), match(6, monthSeries), match(7, monthSeries), match(8, monthSeries),
-                        match(9, monthSeries), match(10, monthSeries), match(11, monthSeries), match(12, monthSeries)),
+                          match(5, monthSeries), match(6, monthSeries), match(7, monthSeries), match(8, monthSeries),
+                          match(9, monthSeries), match(10, monthSeries), match(11, monthSeries), match(12, monthSeries)),
                         simulationYears)
   
   # Get days of each year that disease will be introduced:
@@ -220,6 +220,7 @@ getResultsMatrix <- eventReactive(input$run, {
       pressureDays[[i]] <- 0
     }
   }
+  flush.console()
   
   # Calculate demographics of initial population:
   initialAdults     <- round(initialFracAdult * initialPopSize)
@@ -283,11 +284,11 @@ getResultsMatrix <- eventReactive(input$run, {
                     'PEPs', 'lifeLoss', 'newlyVaccinated') 
   censusVector <- rep(0, length(censusSeries))
   names(censusVector) <- censusSeries
-
+  
   # Create a 3d array to store results:
   resultsMatrix <- array(data=NA, dim=c(simulationEnd, length(censusSeries), iterations))
   colnames(resultsMatrix) <- censusSeries
-
+  
   # Create a vector of binary strategy indicators:
   strategyNames <- c('vaccPuppyMale', 'vaccPuppyFemale',
                      'vaccAdultMale', 'vaccAdultFemale', 
@@ -326,7 +327,8 @@ getResultsMatrix <- eventReactive(input$run, {
                           rep(euthanasiaCost, 6))
   names(strategyCostVector) <- strategyNames
   ########################################
-
+  
+  
   ########################################
   getDailyBudget <- function(j) {
     # Arguments: The year of the simulation (j)
@@ -336,6 +338,7 @@ getResultsMatrix <- eventReactive(input$run, {
     return(dailyBudget)
   }
   ########################################
+  
   
   ########################################
   InitialPopulation <- function() {
@@ -370,7 +373,8 @@ getResultsMatrix <- eventReactive(input$run, {
     return(popMatrix)
   }
   ########################################
-
+  
+  
   ########################################
   MortalityFunction <- function() {
     # Arguments: None.
@@ -396,6 +400,7 @@ getResultsMatrix <- eventReactive(input$run, {
     return(popMatrix)
   }
   ########################################
+  
   
   ########################################
   ReproductionFunction <- function(d) {
@@ -426,7 +431,8 @@ getResultsMatrix <- eventReactive(input$run, {
     return(popMatrix)
   }
   ########################################
-
+  
+  
   ########################################
   ImmigrationFunction <- function() {
     # Arguments: None.
@@ -455,6 +461,7 @@ getResultsMatrix <- eventReactive(input$run, {
   }
   ########################################
   
+  
   ########################################
   DiseaseSpreadFunction <- function() {
     # Arguments: None.
@@ -468,7 +475,7 @@ getResultsMatrix <- eventReactive(input$run, {
       temp[sample(seq(1, nrow(popMatrix)), dogsPerMonthExposed)] <- 1
       # Change states if the individual can be moved to the exposed state:
       newExposed <- temp == 1 & popMatrix[, 'infective'] == 0 & popMatrix[, 'exposed'] == 0 &
-                    popMatrix[, 'immune'] == 0 & popMatrix[, 'vaccinated'] == 0
+        popMatrix[, 'immune'] == 0 & popMatrix[, 'vaccinated'] == 0
       popMatrix[newExposed, 'exposed']     <- 1
       popMatrix[newExposed, 'timeExposed'] <- 0
     }
@@ -486,14 +493,15 @@ getResultsMatrix <- eventReactive(input$run, {
     bitten[infectionDraw > probInfectionFromBite] <- 0
     # Take the dogs that received rabid bites and moved to exposed state if appropriate:
     newExposed <- bitten == 1 & popMatrix[, 'infective'] == 0 & popMatrix[, 'exposed'] == 0 &
-                  popMatrix[, 'immune'] == 0 & popMatrix[, 'vaccinated'] == 0
+      popMatrix[, 'immune'] == 0 & popMatrix[, 'vaccinated'] == 0
     popMatrix[newExposed, 'exposed']     <- 1
     popMatrix[newExposed, 'timeExposed'] <- 0
     
     return(popMatrix)
   } 
   ########################################
-
+  
+  
   ########################################
   DiseaseProgressionFunction <- function() {
     # Arguments: None.
@@ -519,6 +527,7 @@ getResultsMatrix <- eventReactive(input$run, {
   }
   ########################################
   
+  
   ########################################
   CensusFunction <- function() {
     # Arguments: None.
@@ -533,7 +542,7 @@ getResultsMatrix <- eventReactive(input$run, {
     censusVector['femalesSterilized'] <- sum(popMatrix[, 'sterilized'] == 1 & popMatrix[, 'female'] == 1)
     censusVector['contracepted'] <- sum(popMatrix[, 'sterilized'])
     censusVector['femalesContracepted'] <- sum(popMatrix[, 'contracepted'] == 1 & 
-                                               popMatrix[, 'female'] == 1)
+                                                 popMatrix[, 'female'] == 1)
     censusVector['vaccinated'] <- sum(popMatrix[, 'vaccinated'])
     censusVector['immune'] <- sum(popMatrix[, 'immune'])
     censusVector['exposed'] <- sum(popMatrix[, 'exposed'])
@@ -547,24 +556,34 @@ getResultsMatrix <- eventReactive(input$run, {
   }
   ########################################
   
+  
   ########################################
   ManagementFunction <- function(d, marginalCost, dailyBudget, totalSpending, totalContacted) {
     dailySpending <- 0
     if (dailyBudget[d] > 0) {
-      while (dailySpending < dailyBudget[d] & sum(popMatrix[, 'contacted'] == 0) != 0) {
+      count <- 0
+      while (dailySpending < dailyBudget[d] & min(popMatrix[, 'contacted']) == 0) {
+        
         # if there are uncontacted dogs left in the lowest marginal cost category, contact them first
         if (sum(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[1]) > 0) {
-          dogNumber <- sample(which(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[1] ), 1)
+          dogNumber <- sample(rep(which(popMatrix[, 'contacted'] == 0 & 
+                                        popMatrix[, 'contactCost'] == marginalCost[1]), 2), 1)
           # now check for uncontacted in 2nd lowest marginal cost category
         } else if (sum(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[2]) > 0) {
-          dogNumber <- sample(which(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[2] ), 1)
+          dogNumber <- sample(rep(which(popMatrix[, 'contacted'] == 0 & 
+                                        popMatrix[, 'contactCost'] == marginalCost[2]), 2), 1)
           # and for 2nd highest marginal cost category
         } else if (sum(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[3]) > 0) {
-          dogNumber <- sample(which(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[3] ), 1)
+          dogNumber <- sample(rep(which(popMatrix[, 'contacted'] == 0 & 
+                                        popMatrix[, 'contactCost'] == marginalCost[3]), 2), 1)
           # and for highest marginal cost category
         } else if (sum(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[4]) > 0) {
-          dogNumber <- sample(which(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[4] ), 1)
+          dogNumber <- sample(rep(which(popMatrix[, 'contacted'] == 0 & 
+                                        popMatrix[, 'contactCost'] == marginalCost[4]), 2), 1)
+        } else {
+          break
         }
+        
         popMatrix[dogNumber, 'contacted'] <- 1
         totalContacted <- totalContacted + 1
         dailySpending <- dailySpending + as.numeric(popMatrix[dogNumber, 'contactCost'])
@@ -604,7 +623,6 @@ getResultsMatrix <- eventReactive(input$run, {
                 }
               }
             }
-            
           } else if (popMatrix[dogNumber, 'adult'] == 1) {
             # female ADULT management here
             if (strategyVector['euthAdultFemale'] == 1) {
@@ -637,7 +655,6 @@ getResultsMatrix <- eventReactive(input$run, {
                 }
               }
             }
-            
           } else {
             # female JUVENILE management here
             if (strategyVector['euthJuvFemale'] == 1) {
@@ -780,7 +797,8 @@ getResultsMatrix <- eventReactive(input$run, {
     return(list(popMatrix, totalContacted, dailySpending))
   }
   ########################################
-
+  
+  
   ########################################
   TimeFunction <- function() {
     # Arguments: None.
@@ -818,6 +836,7 @@ getResultsMatrix <- eventReactive(input$run, {
     return(popMatrix)
   }
   ########################################
+  
 
   ########################################
   withProgress(min=0, max=100, value=0, message = '', detail = '', {
@@ -899,18 +918,9 @@ output$graphicalResults <- renderPlot({
   simulationYears <- 5
   simulationEnd   <- 365 * simulationYears 
   carryingCap     <- getCarryingCapacity()
-  abunMax         <- max(resultsMatrix[, 'abundance', i], resultsMatrix[, 'abundance', i-1],
-                         resultsMatrix[, 'abundance', i-2], resultsMatrix[, 'abundance', i-3],
-                         resultsMatrix[, 'abundance', i-4], apply(resultsMatrix[, 'abundance', ], 
-                                                                  1, mean, na.rm=TRUE)) * 1.1
-  prevMax         <- max(resultsMatrix[, 'infective', i], resultsMatrix[, 'infective', i-1],
-                         resultsMatrix[, 'infective', i-2], resultsMatrix[, 'infective', i-3],
-                         resultsMatrix[, 'infective', i-4], apply(resultsMatrix[, 'infective', ], 
-                                                                  1, mean, na.rm=TRUE)) * 1.1
-  vaccMax         <- max(resultsMatrix[, 'vaccinated', i], resultsMatrix[, 'vaccinated', i-1],
-                         resultsMatrix[, 'vaccinated', i-2], resultsMatrix[, 'vaccinated', i-3],
-                         resultsMatrix[, 'vaccinated', i-4], apply(resultsMatrix[, 'vaccinated', ], 
-                                                                   1, mean, na.rm=TRUE)) * 1.1
+  abunMax         <- max(resultsMatrix[, 'abundance', ]) * 1.1
+  prevMax         <- max(resultsMatrix[, 'infective', ]) * 1.1
+  vaccMax         <- max(resultsMatrix[, 'vaccinated', ]) * 1.1
   daySeries       <- seq(1, simulationEnd)
   
   # Construct abundance plot:

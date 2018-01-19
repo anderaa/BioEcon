@@ -1,11 +1,10 @@
 
-
 # BioEcon for Canine Rabies is an individual-based, stochastic simulation model that forecasts the 
 # economic and biological results of management.
 
 # Built by Aaron Anderson, Johann Kotze, Brody Hatch, and Jordan Navin
 
-# Version 0.2. Last updated October 4, 2017
+# Version 0.3. Last updated 2017-01-18
 # Inquiries and bugs to: Aaron.M.Anderson@aphis.usda.gov 
 # Custom builds available
 
@@ -27,9 +26,9 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 # SOFTWARE.
 
-
+########################################################################################################################
 rm(list=ls())
-set.seed(1)
+set.seed(2)
 
 # load required packages
 library(ggplot2)
@@ -127,11 +126,11 @@ contactCost100 <- 8453.7
 
 # input for budget years 1-5    
 annualBudget     <- rep(0, simulationYears)
-annualBudget[1]  <- 1000
-annualBudget[2]  <- 1000
-annualBudget[3]  <- 1000
-annualBudget[4]  <- 1000
-annualBudget[5]  <- 1000
+annualBudget[1]  <- 50000
+annualBudget[2]  <- 0
+annualBudget[3]  <- 0
+annualBudget[4]  <- 0
+annualBudget[5]  <- 0
 
 # inputs for strategy
 # note: model assumes already sterilized dogs are not re-sterilized. 
@@ -183,6 +182,8 @@ mgtMonthVector[9]  <- 0
 mgtMonthVector[10] <- 0
 mgtMonthVector[11] <- 0
 mgtMonthVector[12] <- 0
+########################################################################################################################
+
 
 ########################################################################################################################
 # Misc preliminary calculations and assignments:
@@ -319,6 +320,7 @@ strategyCostVector <- c(rep(vaccineCost, 6),
 names(strategyCostVector) <- strategyNames
 ########################################################################################################################
 
+
 ########################################################################################################################
 getDailyBudget <- function(j) {
   # Arguments: The year of the simulation (j)
@@ -328,6 +330,7 @@ getDailyBudget <- function(j) {
   return(dailyBudget)
 }
 ########################################################################################################################
+
 
 ########################################################################################################################
 InitialPopulation <- function() {
@@ -363,6 +366,7 @@ InitialPopulation <- function() {
 }
 ########################################################################################################################
 
+
 ########################################################################################################################
 MortalityFunction <- function() {
   # Arguments: None.
@@ -388,6 +392,7 @@ MortalityFunction <- function() {
   return(popMatrix)
 }
 ########################################################################################################################
+
 
 ########################################################################################################################
 ReproductionFunction <- function(d) {
@@ -419,6 +424,7 @@ ReproductionFunction <- function(d) {
 }
 ########################################################################################################################
 
+
 ########################################################################################################################
 ImmigrationFunction <- function() {
   # Arguments: None.
@@ -446,6 +452,7 @@ ImmigrationFunction <- function() {
   return(popMatrix)
 }
 ########################################################################################################################
+
 
 ########################################################################################################################
 DiseaseSpreadFunction <- function() {
@@ -486,6 +493,7 @@ DiseaseSpreadFunction <- function() {
 } 
 ########################################################################################################################
 
+
 ########################################################################################################################
 DiseaseProgressionFunction <- function() {
   # Arguments: None.
@@ -510,6 +518,7 @@ DiseaseProgressionFunction <- function() {
   return(popMatrix)
 }
 ########################################################################################################################
+
 
 ########################################################################################################################
 CensusFunction <- function() {
@@ -544,20 +553,29 @@ CensusFunction <- function() {
 ManagementFunction <- function(d, marginalCost, dailyBudget, totalSpending, totalContacted) {
   dailySpending <- 0
   if (dailyBudget[d] > 0) {
-    while (dailySpending < dailyBudget[d] & sum(popMatrix[, 'contacted'] == 0) != 0) {
+    count <- 0
+    while (dailySpending < dailyBudget[d] & min(popMatrix[, 'contacted']) == 0) {
+      
       # if there are uncontacted dogs left in the lowest marginal cost category, contact them first
       if (sum(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[1]) > 0) {
-        dogNumber <- sample(which(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[1] ), 1)
+        dogNumber <- sample(rep(which(popMatrix[, 'contacted'] == 0 & 
+                                      popMatrix[, 'contactCost'] == marginalCost[1]), 2), 1)
         # now check for uncontacted in 2nd lowest marginal cost category
       } else if (sum(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[2]) > 0) {
-        dogNumber <- sample(which(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[2] ), 1)
+        dogNumber <- sample(rep(which(popMatrix[, 'contacted'] == 0 & 
+                                      popMatrix[, 'contactCost'] == marginalCost[2]), 2), 1)
         # and for 2nd highest marginal cost category
       } else if (sum(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[3]) > 0) {
-        dogNumber <- sample(which(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[3] ), 1)
+        dogNumber <- sample(rep(which(popMatrix[, 'contacted'] == 0 & 
+                                      popMatrix[, 'contactCost'] == marginalCost[3]), 2), 1)
         # and for highest marginal cost category
       } else if (sum(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[4]) > 0) {
-        dogNumber <- sample(which(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[4] ), 1)
+        dogNumber <- sample(rep(which(popMatrix[, 'contacted'] == 0 & 
+                                      popMatrix[, 'contactCost'] == marginalCost[4]), 2), 1)
+      } else {
+        break
       }
+      
       popMatrix[dogNumber, 'contacted'] <- 1
       totalContacted <- totalContacted + 1
       dailySpending <- dailySpending + as.numeric(popMatrix[dogNumber, 'contactCost'])
@@ -597,7 +615,6 @@ ManagementFunction <- function(d, marginalCost, dailyBudget, totalSpending, tota
               }
             }
           }
-          
         } else if (popMatrix[dogNumber, 'adult'] == 1) {
           # female ADULT management here
           if (strategyVector['euthAdultFemale'] == 1) {
@@ -630,7 +647,6 @@ ManagementFunction <- function(d, marginalCost, dailyBudget, totalSpending, tota
               }
             }
           }
-          
         } else {
           # female JUVENILE management here
           if (strategyVector['euthJuvFemale'] == 1) {
@@ -774,6 +790,7 @@ ManagementFunction <- function(d, marginalCost, dailyBudget, totalSpending, tota
 }
 ########################################################################################################################
 
+
 ########################################################################################################################
 TimeFunction <- function() {
   # Arguments: None.
@@ -811,6 +828,7 @@ TimeFunction <- function() {
   return(popMatrix)
 }
 ########################################################################################################################
+
 
 ########################################################################################################################
 # Loop through iterations:
@@ -1051,5 +1069,5 @@ vaccPlot <- ggplot() +
 
 grid.draw(rbind(ggplotGrob(abundPlot), ggplotGrob(infectPlot), ggplotGrob(vaccPlot)))
 
-csv_data = data.frame(cbind(daySeries, meanAbun, meanInf, meanVac))
+#csv_data = data.frame(cbind(daySeries, meanAbun, meanInf, meanVac))
 
