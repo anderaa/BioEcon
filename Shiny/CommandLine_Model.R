@@ -28,18 +28,19 @@
 
 ########################################################################################################################
 rm(list=ls())
-set.seed(2)
+set.seed(1)
 
 # load required packages
 library(ggplot2)
 library(gridExtra)
 library(gtable)
 library(grid)
+library(beepr)
 
 # inputs for simulation
 simulationYears <- 5
 simulationEnd   <- 365 * simulationYears
-iterations      <- 25
+iterations      <- 5000
 
 # inputs for initial population
 initialPopSize    <- 404
@@ -126,13 +127,13 @@ contactCost100 <- 8453.7
 
 # input for budget years 1-5    
 annualBudget     <- rep(0, simulationYears)
-annualBudget[1]  <- 50000
+annualBudget[1]  <- 20000/3
 annualBudget[2]  <- 0
-annualBudget[3]  <- 0
+annualBudget[3]  <- 20000/3
 annualBudget[4]  <- 0
-annualBudget[5]  <- 0
+annualBudget[5]  <- 20000/3
 
-# inputs for strategy
+# inputs for strategy  
 # note: model assumes already sterilized dogs are not re-sterilized. 
 #       Within the same year dogs will not be vaccinated or contracepted 
 #       twice. If dogs are re-contancted in a future year, they will be 
@@ -521,35 +522,6 @@ DiseaseProgressionFunction <- function() {
 
 
 ########################################################################################################################
-CensusFunction <- function() {
-  # Arguments: None.
-  # Return: A vector of results.
-  # Purpose: Calculate results that are recorded daily.
-  
-  censusVector['abundance'] <- nrow(popMatrix)
-  censusVector['puppy'] <- sum(popMatrix[, 'age'] <= maxPuppyAge)
-  censusVector['adult'] <- sum(popMatrix[, 'age'] > maxJuvAge)
-  censusVector['females'] <- sum(popMatrix[, 'female'])
-  censusVector['sterilized'] <- sum(popMatrix[, 'sterilized'])
-  censusVector['femalesSterilized'] <- sum(popMatrix[, 'sterilized'] == 1 & popMatrix[, 'female'] == 1)
-  censusVector['contracepted'] <- sum(popMatrix[, 'sterilized'])
-  censusVector['femalesContracepted'] <- sum(popMatrix[, 'contracepted'] == 1 & 
-                                               popMatrix[, 'female'] == 1)
-  censusVector['vaccinated'] <- sum(popMatrix[, 'vaccinated'])
-  censusVector['immune'] <- sum(popMatrix[, 'immune'])
-  censusVector['exposed'] <- sum(popMatrix[, 'exposed'])
-  censusVector['infective'] <- sum(popMatrix[, 'infective'])
-  bitesNonRabid <- bitesPerNonRabid * (censusVector['abundance'] - censusVector['infective'])
-  bitesRabid <- bitesPerRabid * (censusVector['infective'])
-  censusVector['PEPs'] <- PEPperNonRabidBite * bitesNonRabid + PEPperRabidBite * bitesRabid
-  censusVector['lifeLoss'] <- lifeLossPerRabidBite * ((1 - PEPperRabidBite) * bitesRabid)
-  
-  return(censusVector)
-}
-########################################################################################################################
-
-
-########################################################################################################################
 ManagementFunction <- function(d, marginalCost, dailyBudget, totalSpending, totalContacted) {
   dailySpending <- 0
   if (dailyBudget[d] > 0) {
@@ -792,6 +764,35 @@ ManagementFunction <- function(d, marginalCost, dailyBudget, totalSpending, tota
 
 
 ########################################################################################################################
+CensusFunction <- function() {
+  # Arguments: None.
+  # Return: A vector of results.
+  # Purpose: Calculate results that are recorded daily.
+  
+  censusVector['abundance'] <- nrow(popMatrix)
+  censusVector['puppy'] <- sum(popMatrix[, 'age'] <= maxPuppyAge)
+  censusVector['adult'] <- sum(popMatrix[, 'age'] > maxJuvAge)
+  censusVector['females'] <- sum(popMatrix[, 'female'])
+  censusVector['sterilized'] <- sum(popMatrix[, 'sterilized'])
+  censusVector['femalesSterilized'] <- sum(popMatrix[, 'sterilized'] == 1 & popMatrix[, 'female'] == 1)
+  censusVector['contracepted'] <- sum(popMatrix[, 'sterilized'])
+  censusVector['femalesContracepted'] <- sum(popMatrix[, 'contracepted'] == 1 & 
+                                               popMatrix[, 'female'] == 1)
+  censusVector['vaccinated'] <- sum(popMatrix[, 'vaccinated'])
+  censusVector['immune'] <- sum(popMatrix[, 'immune'])
+  censusVector['exposed'] <- sum(popMatrix[, 'exposed'])
+  censusVector['infective'] <- sum(popMatrix[, 'infective'])
+  bitesNonRabid <- bitesPerNonRabid * (censusVector['abundance'] - censusVector['infective'])
+  bitesRabid <- bitesPerRabid * (censusVector['infective'])
+  censusVector['PEPs'] <- PEPperNonRabidBite * bitesNonRabid + PEPperRabidBite * bitesRabid
+  censusVector['lifeLoss'] <- lifeLossPerRabidBite * ((1 - PEPperRabidBite) * bitesRabid)
+  
+  return(censusVector)
+}
+########################################################################################################################
+
+
+########################################################################################################################
 TimeFunction <- function() {
   # Arguments: None.
   # Return:    An updated population matrix.
@@ -881,33 +882,6 @@ for(i in 1:simulationEnd) {
     meanResults[i, j] <- mean(resultsMatrix[i, j, ], na.rm=TRUE)
   }
 }
-names(resultsMatrix[1, , 1])    
-########################################################################################################################
-
-
-########################################################################################################################
-# get some key results
-
-dogDaysOfInfection   <- round(sum(apply((resultsMatrix[, 'infective', ]), 1, mean, na.rm=TRUE)))
-meanAbundance        <- round(mean(apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE)))
-totalCostOfInfection <- round(sum(apply(resultsMatrix[, 'PEPs', ], 1, mean, na.rm=TRUE))*costPerPEP)
-totalHumanDeaths     <- round(sum(apply(resultsMatrix[, 'lifeLoss', ], 1, mean, na.rm=TRUE)))
-totalBudget          <- round(sum(annualBudget[1:simulationYears]))
-totalVaccinations    <- round(sum(apply(resultsMatrix[, 'newlyVaccinated', ], 1, mean, na.rm=TRUE)))
-vaccPercentage       <- max(apply(resultsMatrix[, 'vaccinated', ] / resultsMatrix[, 'abundance', ], 
-                                  1, mean, na.rm=TRUE))
-
-# resultsMatrix[, 'infective', ] is a matrix with rows=days and columns=iterations
-# get max prevalence by iteration:
-maxPrev <- apply(resultsMatrix[, 'infective', ], 2, max, na.rm=TRUE)
-dogDaysOfInfection
-mean(maxPrev)
-mean(maxPrev[maxPrev > 1])
-sum(maxPrev > 1)/iterations
-totalVaccinations
-totalBudget + totalCostOfInfection
-totalHumanDeaths
-vaccPercentage
 ########################################################################################################################
 
 
@@ -1069,5 +1043,37 @@ vaccPlot <- ggplot() +
 
 grid.draw(rbind(ggplotGrob(abundPlot), ggplotGrob(infectPlot), ggplotGrob(vaccPlot)))
 
-#csv_data = data.frame(cbind(daySeries, meanAbun, meanInf, meanVac))
+csv_data = data.frame(cbind(daySeries, meanAbun, meanInf, meanVac))
+write.csv(csv_data, 'nopup.csv')
+
+########################################################################################################################
+# get some key results
+#resultsMatrix[day, results series, iteration]
+dogDaysOfInfection   <- sum(apply(resultsMatrix[, 'infective', ], 1, mean, na.rm=TRUE))
+meanAbundance        <- mean(apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE))
+totalCostOfInfection <- sum(apply(resultsMatrix[, 'PEPs', ], 1, mean, na.rm=TRUE))*costPerPEP
+totalHumanDeaths     <- sum(apply(resultsMatrix[, 'lifeLoss', ], 1, mean, na.rm=TRUE))
+totalBudget          <- sum(annualBudget[1:simulationYears])
+totalVaccinations    <- sum(apply(resultsMatrix[, 'newlyVaccinated', ], 1, mean, na.rm=TRUE))
+vaccPercentage       <- max(apply(resultsMatrix[, 'vaccinated', ] / resultsMatrix[, 'abundance', ], 
+                                  1, mean, na.rm=TRUE))
+
+
+# resultsMatrix[, 'infective', ] is a matrix with rows=days and columns=iterations
+# get max prevalence by iteration:
+# meanAbundance
+maxPrev <- apply(resultsMatrix[, 'infective', ], 2, max, na.rm=TRUE)
+round(dogDaysOfInfection, 2)
+#mean(maxPrev)
+round(sum(maxPrev > 1)/iterations * 100)
+round(mean(maxPrev[maxPrev > 1]), 2)
+#totalVaccinations
+round(vaccPercentage * 100)
+round(totalBudget + totalCostOfInfection)
+#totalHumanDeaths
+
+#install.packages("beepr")
+#library(beepr)
+beep(2)
+########################################################################################################################
 
