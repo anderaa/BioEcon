@@ -1044,7 +1044,6 @@ vaccPlot <- ggplot() +
 grid.draw(rbind(ggplotGrob(abundPlot), ggplotGrob(infectPlot), ggplotGrob(vaccPlot)))
 
 csv_data = data.frame(cbind(daySeries, meanAbun, meanInf, meanVac))
-write.csv(csv_data, 'nopup.csv')
 
 ########################################################################################################################
 # get some key results
