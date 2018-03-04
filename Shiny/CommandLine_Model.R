@@ -127,11 +127,11 @@ contactCost100 <- 8453.7
 
 # input for budget years 1-5    
 annualBudget     <- rep(0, simulationYears)
-annualBudget[1]  <- 20000/3
+annualBudget[1]  <- 40000/3
 annualBudget[2]  <- 0
-annualBudget[3]  <- 20000/3
+annualBudget[3]  <- 40000/3
 annualBudget[4]  <- 0
-annualBudget[5]  <- 20000/3
+annualBudget[5]  <- 40000/3
 
 # inputs for strategy  
 # note: model assumes already sterilized dogs are not re-sterilized. 
