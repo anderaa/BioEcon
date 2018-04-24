@@ -42,13 +42,13 @@ library(shiny)
 # Define UI for application:
 shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'styles.css'),
   img(src = "logo.png", height = 47, align='left'),      
-  titlePanel(strong('BioEcon for Canine Rabies - v0.2'), windowTitle='BioEcon'), 
+  titlePanel(strong('BioEcon for Canine Rabies - v0.3'), windowTitle='BioEcon'), 
     tabsetPanel(id='mainTabs', type='pills',
       tabPanel('Model Setup',
         navlistPanel('Model Setup', widths=c(3, 9),
                      
           tabPanel('Basic Inputs',
-            sliderInput('iterations', label='number of iterations', min=5, max=250, value=5, step=5, ticks=FALSE), 
+            numericInput('iterations', label='number of iterations', value=5), 
             br(), 
             numericInput('initialPopSize', label='initial abundance on January 1', value=404), 
             br(),
@@ -120,8 +120,8 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
           ),  # close Disease Transmission tabPanel
 
           tabPanel('Disease Impacts',
-            numericInput('bitesPerNonRabid', label='daily bites per non-rabid', value=0.00017/3),
-            numericInput('bitesPerRabid', label='daily bites per rabid', value=0.06756/3), 
+            numericInput('bitesPerNonRabid', label='daily bites per non-rabid', value=round(0.00017/3, 5)),
+            numericInput('bitesPerRabid', label='daily bites per rabid', value=round(0.06756/3, 5)), 
             br(),
             sliderInput('PEPperNonRabidBite', label='PEP per non-rabid bite',
                         min=0.0, max=1.0, value=0.991, ticks=FALSE),
@@ -312,7 +312,7 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
         br(), br(),
         'Built by Aaron Anderson, Johann Kotze, Brody Hatch, and Jordan Navin',
         br(), br(),
-        'Version 0.2. Last updated October 4, 2017.',
+        'Version 0.3. Last updated April 24, 2018.',
         br(), br(),
         'Inquiries and bugs to: Aaron.M.Anderson@aphis.usda.gov', 
         br(), br(),

@@ -86,7 +86,7 @@ birthPulseVector[12] <- 0
 # inputs for disease
 monthsOfPressure      <- 1
 dogsPerMonthExposed   <- 1
-monthInitIntroduction <- 25
+monthInitIntroduction <- 49
 transmissionParam     <- 2.15
 bitesPerRabidMean <- transmissionParam
 bitesPerRabidShape    <- 1.33
@@ -127,11 +127,11 @@ contactCost100 <- 8453.7
 
 # input for budget years 1-5    
 annualBudget     <- rep(0, simulationYears)
-annualBudget[1]  <- 40000/3
-annualBudget[2]  <- 0
-annualBudget[3]  <- 40000/3
-annualBudget[4]  <- 0
-annualBudget[5]  <- 40000/3
+annualBudget[1]  <- 40000/5
+annualBudget[2]  <- 40000/5
+annualBudget[3]  <- 40000/5
+annualBudget[4]  <- 40000/5
+annualBudget[5]  <- 40000/5
 
 # inputs for strategy  
 # note: model assumes already sterilized dogs are not re-sterilized. 

@@ -1074,12 +1074,12 @@ output$numericalResults <- renderPlot({
   simulationYears      <- 5                     
   simulationEnd        <- 365 * simulationYears
   carryingCap          <- getCarryingCapacity()
-  dogDaysOfInfection   <- round(sum(apply((resultsMatrix[, 'infective', ]), 1, mean, na.rm=TRUE)))
-  meanAbundance        <- round(mean(apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE)))
-  totalCostOfInfection <- round(sum(apply(resultsMatrix[, 'PEPs', ], 1, mean, na.rm=TRUE))*costPerPEP)
-  totalHumanDeaths     <- round(sum(apply(resultsMatrix[, 'lifeLoss', ], 1, mean, na.rm=TRUE)))
-  totalBudget          <- round(sum(annualBudget[1:simulationYears]))
-  totalVaccinations    <- round(sum(apply(resultsMatrix[, 'newlyVaccinated', ], 1, mean, na.rm=TRUE)))
+  dogDaysOfInfection   <- round(sum(apply((resultsMatrix[, 'infective', ]), 1, mean, na.rm=TRUE)), 2)
+  meanAbundance        <- round(mean(apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE)), 2)
+  totalCostOfInfection <- round(sum(apply(resultsMatrix[, 'PEPs', ], 1, mean, na.rm=TRUE))*costPerPEP, 2)
+  totalHumanDeaths     <- round(sum(apply(resultsMatrix[, 'lifeLoss', ], 1, mean, na.rm=TRUE)), 2)
+  totalBudget          <- round(sum(annualBudget[1:simulationYears]), 2)
+  totalVaccinations    <- round(sum(apply(resultsMatrix[, 'newlyVaccinated', ], 1, mean, na.rm=TRUE)), 2)
   par(mar = c(0,0,0,0))
   plot(c(0, 1), c(0, 1), ann = F, bty = 'n', type = 'n', xaxt = 'n', yaxt = 'n')
   text(0, 0.93, paste('Averages across all iterations:'), pos=4, cex=2)
