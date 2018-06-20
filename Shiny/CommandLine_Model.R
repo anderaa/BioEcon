@@ -4,7 +4,7 @@
 
 # Built by Aaron Anderson, Johann Kotze, Brody Hatch, and Jordan Navin
 
-# Version 0.3. Last updated 2017-01-18
+# Version 0.4. Last updated 2018-06-20
 # Inquiries and bugs to: Aaron.M.Anderson@aphis.usda.gov 
 # Custom builds available
 
@@ -40,12 +40,12 @@ library(beepr)
 # inputs for simulation
 simulationYears <- 5
 simulationEnd   <- 365 * simulationYears
-iterations      <- 5000
+iterations      <- 50
 
 # inputs for initial population
-initialPopSize    <- 404
-initialFracAdult  <- 0.49
-initialFracPup    <- 0.39
+initialPopSize    <- 463
+initialFracAdult  <- 0.61
+initialFracPup    <- 0.33
 initialFracFemale <- 0.38
 initialFracImmune <- 0.0
 initialFracContra <- 0.0
@@ -63,7 +63,7 @@ adultAnnMortProb   <- 0.32
 emigrationProb     <- 0
 
 # inputs for reproduction
-immigrantDogs        <- 189
+immigrantDogs        <- 131
 expectedLittersPFY   <- 0.31
 expLitterPer <- expectedLittersPFY
 meanLitterSize       <- 4.4
@@ -127,11 +127,11 @@ contactCost100 <- 8453.7
 
 # input for budget years 1-5    
 annualBudget     <- rep(0, simulationYears)
-annualBudget[1]  <- 5000/5
-annualBudget[2]  <- 5000/5
-annualBudget[3]  <- 5000/5
-annualBudget[4]  <- 5000/5
-annualBudget[5]  <- 5000/5
+annualBudget[1]  <- 0
+annualBudget[2]  <- 0
+annualBudget[3]  <- 0
+annualBudget[4]  <- 0
+annualBudget[5]  <- 0
 
 # inputs for strategy  
 # note: model assumes already sterilized dogs are not re-sterilized. 

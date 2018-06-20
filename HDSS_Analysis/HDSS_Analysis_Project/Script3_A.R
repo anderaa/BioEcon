@@ -185,8 +185,8 @@ monthMatrix[, 'dec'] <- month == 12
 # combine all data
 mortalityData <- cbind(mortalityData, yearMatrix, monthMatrix)
 
-# subset mortalityData to right time frame (1-1-2012 -- 12-31-2015)
-mortalityData <- mortalityData[mortalityData$day >= 15340 & mortalityData$day <= 16800, ]
+# subset mortalityData to right time frame (1-1-2013 -- 12-31-2015)
+mortalityData <- mortalityData[mortalityData$day >= (15340 + 365) & mortalityData$day <= 16800, ]
 
 # create list of unique days
 uniqueDay <- unique(mortalityData$day)
@@ -246,3 +246,5 @@ mean(puppyPct / (puppyPct + juvPct))
 # calculating average male/female sex ratio
 avgSexPct <- mean(femalePct)
 avgSexPct
+
+write.csv( data.frame( "day" = uniqueDay, "pop" = totalPop ), "~/Desktop/graph.csv", row.names = F) 

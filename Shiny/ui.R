@@ -53,10 +53,10 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
             numericInput('initialPopSize', label='initial abundance on January 1', value=404), 
             br(),
             sliderInput('initialFracAdult', label='fraction of initial population that are adult (age > 299 days)', 
-                        min=0, max=1, value=0.49, step=0.01, ticks=FALSE), 
+                        min=0, max=1, value=0.61, step=0.01, ticks=FALSE), 
             br(),
             sliderInput('initialFracPup', label='fraction of juveniles (age < 300 days) that are puppies 
-                        (age < 90 days)', min=0, max=1, value=0.39, step=0.01, ticks=FALSE), 
+                        (age < 90 days)', min=0, max=1, value=0.33, step=0.01, ticks=FALSE), 
             br(),
             numericInput('carryingCap', label='carrying capacity', value=577)
           ),  # close Basic Inputs tabPanel
@@ -76,7 +76,7 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
                 sliderInput('emigrationProb', label='annual out-migration probability',
                             min=0.0, max=1.0, value=0, ticks=FALSE), 
                 br(),
-                numericInput('immigrantDogs', label='expected annual in-migration', value=189)
+                numericInput('immigrantDogs', label='expected annual in-migration', value=131)
               ),  # close column
               column(1),
               column(4, 
@@ -312,7 +312,7 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
         br(), br(),
         'Built by Aaron Anderson, Johann Kotze, Brody Hatch, and Jordan Navin',
         br(), br(),
-        'Version 0.3. Last updated April 24, 2018.',
+        'Version 0.4. Last updated June 20, 2018.',
         br(), br(),
         'Inquiries and bugs to: Aaron.M.Anderson@aphis.usda.gov', 
         br(), br(),
