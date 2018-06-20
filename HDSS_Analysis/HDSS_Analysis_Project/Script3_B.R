@@ -66,7 +66,7 @@ endDate <- max(max(dateOfEntry, na.rm=TRUE), max(dateOfExit, na.rm=TRUE))
 
 # Calculating average immigrant dogs per year
 residencyTable$date_entry <- as.numeric(as.Date(residencyTable$date_entry, "%Y-%m-%d"))
-res2012 <- residencyTable[residencyTable$date_entry >= 15340, ]
+res2012 <- residencyTable[residencyTable$date_entry >= (15340 + 365), ]
 resFinal <- res2012[res2012$entry_event != 1, ]
 
 totalImmigrants <- nrow(resFinal)
@@ -75,3 +75,17 @@ totalYears <- totalDays/365
 
 expectedImmigrants <- totalImmigrants/totalYears
 print(expectedImmigrants)
+
+
+# investigating the relationship between the in-migration and abundance
+# the graph.csv is created in Script3_A.R
+df = read.csv('~/Desktop/graph.csv')
+df = df[order(df['day']), ]
+plot(df[,'day'], df[,'pop'])
+df[, 'inMig'] = 0
+for(i in 1:nrow(df)) {
+  inMig = sum(resFinal$date_entry == df[i, 'day'])
+  #print(inMig)
+  df[i, 'inMig'] = inMig
+}
+summary(lm(df$inMig ~ df$pop))
