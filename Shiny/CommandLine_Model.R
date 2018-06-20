@@ -40,7 +40,7 @@ library(beepr)
 # inputs for simulation
 simulationYears <- 5
 simulationEnd   <- 365 * simulationYears
-iterations      <- 50
+iterations      <- 5
 
 # inputs for initial population
 initialPopSize    <- 463

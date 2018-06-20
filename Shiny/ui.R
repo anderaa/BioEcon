@@ -42,7 +42,7 @@ library(shiny)
 # Define UI for application:
 shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'styles.css'),
   img(src = "logo.png", height = 47, align='left'),      
-  titlePanel(strong('BioEcon for Canine Rabies - v0.3'), windowTitle='BioEcon'), 
+  titlePanel(strong('BioEcon for Canine Rabies - v0.4'), windowTitle='BioEcon'), 
     tabsetPanel(id='mainTabs', type='pills',
       tabPanel('Model Setup',
         navlistPanel('Model Setup', widths=c(3, 9),
@@ -50,7 +50,7 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
           tabPanel('Basic Inputs',
             numericInput('iterations', label='number of iterations', value=5), 
             br(), 
-            numericInput('initialPopSize', label='initial abundance on January 1', value=404), 
+            numericInput('initialPopSize', label='initial abundance on January 1', value=463), 
             br(),
             sliderInput('initialFracAdult', label='fraction of initial population that are adult (age > 299 days)', 
                         min=0, max=1, value=0.61, step=0.01, ticks=FALSE), 
