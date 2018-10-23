@@ -28,7 +28,7 @@
 
 ########################################################################################################################
 rm(list=ls())
-set.seed(1111)
+set.seed(1)
 
 # load required packages
 library(ggplot2)
@@ -36,290 +36,6 @@ library(gridExtra)
 library(gtable)
 library(grid)
 library(beepr)
-
-# inputs for simulation
-simulationYears <- 5
-simulationEnd   <- 365 * simulationYears
-iterations      <- 5000
-
-# inputs for initial population
-initialPopSize    <- 463
-initialFracAdult  <- 0.61
-initialFracPup    <- 0.33
-initialFracFemale <- 0.38
-initialFracImmune <- 0.0
-initialFracContra <- 0.0
-initialFracVacc   <- 0.0
-initialFracSter   <- 0.0
-
-# inputs for mortality
-maxJuvAge          <- 299
-maxPuppyAge        <- 89
-maxAge             <- 4000
-carryingCap        <- 577
-pupAnnMortProb     <- 0.90
-juvAnnMortProb     <- 0.63
-adultAnnMortProb   <- 0.32
-emigrationProb     <- 0
-
-# inputs for reproduction
-immigrantDogs        <- 131
-expectedLittersPFY   <- 0.31
-expLitterPer <- expectedLittersPFY
-meanLitterSize       <- 4.4
-femalePupProb        <- 0.38
-fractionBirthPulse   <- 0.0
-birthPulseVector     <- rep(0, 12)
-birthPulseVector[1]  <- 0 
-birthPulseVector[2]  <- 0 
-birthPulseVector[3]  <- 0
-birthPulseVector[4]  <- 0 
-birthPulseVector[5]  <- 0 
-birthPulseVector[6]  <- 0 
-birthPulseVector[7]  <- 0
-birthPulseVector[8]  <- 0
-birthPulseVector[9]  <- 0 
-birthPulseVector[10] <- 0 
-birthPulseVector[11] <- 0 
-birthPulseVector[12] <- 0 
-
-# inputs for disease
-monthsOfPressure      <- 1
-dogsPerMonthExposed   <- 1
-monthInitIntroduction <- 25
-transmissionParam     <- 2.15
-bitesPerRabidMean <- transmissionParam
-bitesPerRabidShape    <- 1.33
-probInfectionFromBite <- 0.49
-timeLimitExposed      <- 22 
-timeLimitInfective    <- 3
-survivalProb          <- 0
-
-# inputs for benefits of management
-bitesPerNonRabid     <- 0.00017/3 
-bitesPerRabid        <- 0.06756/3 
-PEPperNonRabidBite   <- 0.991
-PEPperRabidBite      <- 0.991
-costPerPEP           <- 754.92
-lifeLossPerRabidBite <- 0.19
-
-# inputs for treatment costs
-vaccineCost             <- 2.426
-contraceptionCostFemale <- 150
-contraceptionCostMale   <- 150
-sterilizationCostFemale <- 300
-sterilizationCostMale   <- 200
-euthanasiaCost          <- 150
-
-# inputs for effectiveness of contraception and vaccination
-timeVaccineEffective       <- 730
-timeBoosterEffective       <- 1095
-timeContraEffectiveMales   <- 730
-timeContraEffectiveFemales <- 730
-
-# inputs for contact costs
-# note: 25, 50, 75, 100, mean 25% 50%, 75%, 100% of specified 
-#       initial abundance
-contactCost25  <- 1019.09
-contactCost50  <- 2757.3
-contactCost75  <- 4735.89
-contactCost100 <- 8453.7
-
-# input for budget years 1-5    
-annualBudget     <- rep(0, simulationYears)
-annualBudget[1]  <- 40000/5
-annualBudget[2]  <- 40000/5
-annualBudget[3]  <- 40000/5
-annualBudget[4]  <- 40000/5
-annualBudget[5]  <- 40000/5
-
-# inputs for strategy  
-# note: model assumes already sterilized dogs are not re-sterilized. 
-#       Within the same year dogs will not be vaccinated or contracepted 
-#       twice. If dogs are re-contancted in a future year, they will be 
-#       re-vaccinated or re-contracepted
-# note: contraception and sterilization cannot both equal 1 for same 
-#       demographic
-# note: if euthanisia equal 1 for some demographic, 
-#       all other treatments must equal zero  
-vaccPuppyMale     <- 1
-vaccPuppyFemale   <- 1
-vaccAdultMale     <- 1
-vaccAdultFemale   <- 1
-vaccJuvMale       <- 1
-vaccJuvFemale     <- 1
-contraPuppyMale   <- 0
-contraPuppyFemale <- 0
-contraAdultMale   <- 0
-contraAdultFemale <- 0
-contraJuvMale     <- 0
-contraJuvFemale   <- 0
-sterPuppyMale     <- 0
-sterPuppyFemale   <- 0
-sterAdultMale     <- 0
-sterAdultFemale   <- 1
-sterJuvMale       <- 0
-sterJuvFemale     <- 1
-euthPuppyMale     <- 0
-euthPuppyFemale   <- 0
-euthAdultMale     <- 0
-euthAdultFemale   <- 0
-euthJuvMale       <- 0
-euthJuvFemale     <- 0
-
-boosterGiven <- TRUE
-
-# inputs for management timing
-mgtMonthVector     <- rep(0, 12)
-mgtMonthVector[1]  <- 0 
-mgtMonthVector[2]  <- 0 
-mgtMonthVector[3]  <- 0
-mgtMonthVector[4]  <- 1
-mgtMonthVector[5]  <- 0
-mgtMonthVector[6]  <- 0
-mgtMonthVector[7]  <- 0
-mgtMonthVector[8]  <- 0
-mgtMonthVector[9]  <- 0
-mgtMonthVector[10] <- 0
-mgtMonthVector[11] <- 0
-mgtMonthVector[12] <- 0
-########################################################################################################################
-
-
-########################################################################################################################
-# Misc preliminary calculations and assignments:
-
-# Get total number of days in simulation:
-simulationEnd   <- 365 * simulationYears
-
-# A vector of month number for use in seasonal timing:
-monthSeries <- c(rep(1, 31), rep(2, 28), rep(3, 31), rep(4, 30), 
-                 rep(5, 31), rep(6, 30), rep(7, 31), rep(8, 31),
-                 rep(9, 30), rep(10, 31), rep(11, 30), rep(12, 31)) 
-
-monthFirstDays <- rep(c(match(1, monthSeries), match(2, monthSeries), match(3, monthSeries), match(4, monthSeries),
-                        match(5, monthSeries), match(6, monthSeries), match(7, monthSeries), match(8, monthSeries),
-                        match(9, monthSeries), match(10, monthSeries), match(11, monthSeries), match(12, monthSeries)),
-                      simulationYears)
-
-# Get days of each year that disease will be introduced:
-pressureMonths <- seq(monthInitIntroduction, monthInitIntroduction + monthsOfPressure - 1)  
-pressureYears <- (pressureMonths - 1) %/% 12 + 1
-pressureDays <- list()
-for (i in 1:simulationYears) {
-  if (sum(pressureYears == i) > 0) {
-    pressureDays[[i]] <- monthFirstDays[pressureMonths[pressureYears == i]]
-  } else {
-    pressureDays[[i]] <- 0
-  }
-}
-flush.console()
-
-# Calculate demographics of initial population:
-initialAdults     <- round(initialFracAdult * initialPopSize)
-initialSubAdults  <- initialPopSize - initialAdults
-initialPuppies    <- round(initialFracPup * initialSubAdults)
-initialJuveniles  <- initialSubAdults - initialPuppies
-
-# Calculate daily mortality probabilities:
-pupMortalityProb   <- 1 - (1 - pupAnnMortProb) ^ (1/365)
-juvMortalityProb   <- 1 - (1 - juvAnnMortProb) ^ (1/365)
-adultMortalityProb <- 1 - (1 - adultAnnMortProb) ^ (1/365)
-
-# Calculate daily litter probabilities:
-monthDayCount <- c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
-if(sum(birthPulseVector) != 12 & sum(birthPulseVector != 0)) {
-  peakDays <- sum(birthPulseVector * monthDayCount)
-  peakProb <- (fractionBirthPulse * expLitterPer) / peakDays
-  offPeakDays <- sum((!birthPulseVector) * monthDayCount)
-  offPeakProb <- ((1-fractionBirthPulse) * expLitterPer) / offPeakDays
-  litterProbability <- rep(offPeakProb, 365)
-  for(m in 1:12) {
-    if(birthPulseVector[m] == 1) {
-      litterProbability[monthSeries == m] <- peakProb
-    }
-  }
-} else {
-  litterProbability <- rep(expLitterPer / 365, 365)
-}
-
-# Calculate marginal costs of contact:
-marginalCost1 <- contactCost25 / (initialPopSize * 0.25)
-marginalCost2 <- contactCost50 / (initialPopSize * 0.25)
-marginalCost3 <- contactCost75 / (initialPopSize * 0.25)
-marginalCost4 <- contactCost100 / (initialPopSize * 0.25)
-marginalCost <- c(marginalCost1, marginalCost2, marginalCost3, marginalCost4)
-
-# List days that management will occur:
-mgtDayVector <- rep(0, 365)
-for(m in 1:12) {
-  if(mgtMonthVector[m] == 1) {
-    mgtDayVector[monthSeries == m] <- 1
-  }
-}
-managementDays <- seq(1, 365)
-managementDays <- managementDays[mgtDayVector == 1]
-
-# A list of traits in the population matrix:
-traitList <- c('age', 'puppy', 'adult','female',
-               'sterilized', 'contracepted', 'timeContra',
-               'vaccinated', 'timeVacc',
-               'boosted', 'contacted', 'contactCost',
-               'exposed', 'timeExposed',
-               'infective', 'timeInfective',
-               'immune', 'month')
-
-# A list of results that will be tracked:
-censusSeries <- c('abundance', 'puppy', 'adult', 'females', 
-                  'sterilized', 'femalesSterilized',
-                  'contracepted', 'femalesContracepted', 
-                  'vaccinated', 'immune', 'exposed', 'infective',
-                  'PEPs', 'lifeLoss', 'newlyVaccinated') 
-censusVector <- rep(0, length(censusSeries))
-names(censusVector) <- censusSeries
-
-# Create a 3d array to store results:
-resultsMatrix <- array(data=NA, dim=c(simulationEnd, length(censusSeries), iterations))
-colnames(resultsMatrix) <- censusSeries
-
-# Create a vector of binary strategy indicators:
-strategyNames <- c('vaccPuppyMale', 'vaccPuppyFemale',
-                   'vaccAdultMale', 'vaccAdultFemale', 
-                   'vaccJuvMale', 'vaccJuvFemale',
-                   'contraPuppyMale', 'contraPuppyFemale',
-                   'contraAdultMale', 'contraAdultFemale',
-                   'contraJuvMale', 'contraJuvFemale',
-                   'sterPuppyMale', 'sterPuppyFemale',
-                   'sterAdultMale', 'sterAdultFemale', 
-                   'sterJuvMale', 'sterJuvFemale',
-                   'euthPuppyMale', 'euthPuppyFemale',
-                   'euthAdultMale', 'euthAdultFemale', 
-                   'euthJuvMale', 'euthJuvFemale') 
-strategyVector <- c(vaccPuppyMale, vaccPuppyFemale,
-                    vaccAdultMale, vaccAdultFemale, 
-                    vaccJuvMale, vaccJuvFemale,
-                    contraPuppyMale, contraPuppyFemale,
-                    contraAdultMale, contraAdultFemale, 
-                    contraJuvMale, contraJuvFemale,
-                    sterPuppyMale, sterPuppyFemale,
-                    sterAdultMale, sterAdultFemale, 
-                    sterJuvMale, sterJuvFemale,
-                    euthPuppyMale, euthPuppyFemale,
-                    euthAdultMale, euthAdultFemale, 
-                    euthJuvMale, euthJuvFemale)
-names(strategyVector) <- strategyNames
-
-# Create a cost vector to indicate unit cost of each strategy:
-strategyCostVector <- c(rep(vaccineCost, 6),
-                        contraceptionCostMale, contraceptionCostFemale,
-                        contraceptionCostMale, contraceptionCostFemale, 
-                        contraceptionCostMale, contraceptionCostFemale,
-                        sterilizationCostMale, sterilizationCostFemale,
-                        sterilizationCostMale, sterilizationCostFemale, 
-                        sterilizationCostMale, sterilizationCostFemale,
-                        rep(euthanasiaCost, 6))
-names(strategyCostVector) <- strategyNames
-########################################################################################################################
 
 
 ########################################################################################################################
@@ -531,19 +247,19 @@ ManagementFunction <- function(d, marginalCost, dailyBudget, totalSpending, tota
       # if there are uncontacted dogs left in the lowest marginal cost category, contact them first
       if (sum(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[1]) > 0) {
         dogNumber <- sample(rep(which(popMatrix[, 'contacted'] == 0 & 
-                                      popMatrix[, 'contactCost'] == marginalCost[1]), 2), 1)
+                                        popMatrix[, 'contactCost'] == marginalCost[1]), 2), 1)
         # now check for uncontacted in 2nd lowest marginal cost category
       } else if (sum(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[2]) > 0) {
         dogNumber <- sample(rep(which(popMatrix[, 'contacted'] == 0 & 
-                                      popMatrix[, 'contactCost'] == marginalCost[2]), 2), 1)
+                                        popMatrix[, 'contactCost'] == marginalCost[2]), 2), 1)
         # and for 2nd highest marginal cost category
       } else if (sum(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[3]) > 0) {
         dogNumber <- sample(rep(which(popMatrix[, 'contacted'] == 0 & 
-                                      popMatrix[, 'contactCost'] == marginalCost[3]), 2), 1)
+                                        popMatrix[, 'contactCost'] == marginalCost[3]), 2), 1)
         # and for highest marginal cost category
       } else if (sum(popMatrix[, 'contacted'] == 0 & popMatrix[, 'contactCost'] == marginalCost[4]) > 0) {
         dogNumber <- sample(rep(which(popMatrix[, 'contacted'] == 0 & 
-                                      popMatrix[, 'contactCost'] == marginalCost[4]), 2), 1)
+                                        popMatrix[, 'contactCost'] == marginalCost[4]), 2), 1)
       } else {
         break
       }
@@ -832,247 +548,398 @@ TimeFunction <- function() {
 
 
 ########################################################################################################################
-# Loop through iterations:
-for(i in 1:iterations) {
-  print(paste('Running iteration', i))
-  flush.console()
-  popMatrix <- InitialPopulation()
+# This is the loop that reads in the parameter values from each of the simulations presented in the paper.
+# It adds the results of each to the parameter_df, then writes it back to disk when finished.
+parameter_df <- read.csv('Manuscript_Scenarios_Base.csv', stringsAsFactors=FALSE)
+parameter_df['dog_days'] <- NA
+parameter_df['prob_outbreak'] <- NA
+parameter_df['max_prev'] <- NA
+parameter_df['max_vacc'] <- NA
+parameter_df['total_cost'] <- NA
+
+for(k in seq(1, nrow(parameter_df))) {
+
+  # inputs for simulation
+  simulationYears <- 5
+  simulationEnd   <- 365 * simulationYears
+  iterations      <- 5
   
-  # Loop through years:
-  for(j in 1:simulationYears) {
-    # reset total spending, number of dogs contacted, and contacted indicator at start of year
-    totalSpending <- 0
-    totalContacted <- 0
-    popMatrix[, 'contacted'] <- 0
-    # get the daily budget for each day of year
-    dailyBudget <- getDailyBudget(j)
-    
-    # Loop through days of the year
-    for(d in 1:365) {
-      popMatrix[, 'month'] <- monthSeries[d]
-      resultsMatrix[(365 * (j-1) + d), ,i] <- CensusFunction()
-      popMatrix <- MortalityFunction()
-      popMatrix <- ReproductionFunction(d)
-      popMatrix <- ImmigrationFunction()
-      popMatrix <- DiseaseProgressionFunction()
-      popMatrix <- DiseaseSpreadFunction()
-      tempVacc <- sum(popMatrix[, 'vaccinated'])
-      if (totalSpending < annualBudget[j]) {
-        mgtReturnList <- ManagementFunction(d, marginalCost, dailyBudget, totalSpending, totalContacted)
-        popMatrix <- mgtReturnList[[1]]
-        totalContacted <- mgtReturnList[[2]]
-        totalSpending <- totalSpending + mgtReturnList[[3]]
-      }
-      # Record new vaccinations:
-      resultsMatrix[(365 * (j-1) + d), 'newlyVaccinated', i] <- sum(popMatrix[, 'vaccinated']) - tempVacc
-      popMatrix <- TimeFunction()
-    }  # close d for loop
-  }  # close j for loop
-}  # close i for loop
-########################################################################################################################
-
-########################################################################################################################
-# to access resultsMatrix:
-#   resultsMatrix[day, results series, iteration]
-
-# getting means across iterations:
-meanResults <- matrix(NA, nrow=simulationEnd, ncol=length(censusSeries))
-for(i in 1:simulationEnd) {
-  for(j in 1:length(censusSeries)) {
-    meanResults[i, j] <- mean(resultsMatrix[i, j, ], na.rm=TRUE)
+  # inputs for initial population
+  initialPopSize    <- 463
+  initialFracAdult  <- 0.61
+  initialFracPup    <- 0.33
+  initialFracFemale <- 0.38
+  initialFracImmune <- 0.0
+  initialFracContra <- 0.0
+  initialFracVacc   <- 0.0
+  initialFracSter   <- 0.0
+  
+  # inputs for mortality
+  maxJuvAge          <- 299
+  maxPuppyAge        <- 89
+  maxAge             <- 4000
+  carryingCap        <- 577
+  pupAnnMortProb     <- 0.90
+  juvAnnMortProb     <- 0.63
+  adultAnnMortProb   <- 0.32
+  emigrationProb     <- 0
+  
+  # inputs for reproduction
+  immigrantDogs        <- 131
+  expectedLittersPFY   <- 0.31
+  expLitterPer <- expectedLittersPFY
+  meanLitterSize       <- 4.4
+  femalePupProb        <- 0.38
+  fractionBirthPulse   <- 0.0
+  birthPulseVector     <- rep(0, 12)
+  birthPulseVector[1]  <- 0 
+  birthPulseVector[2]  <- 0 
+  birthPulseVector[3]  <- 0
+  birthPulseVector[4]  <- 0 
+  birthPulseVector[5]  <- 0 
+  birthPulseVector[6]  <- 0 
+  birthPulseVector[7]  <- 0
+  birthPulseVector[8]  <- 0
+  birthPulseVector[9]  <- 0 
+  birthPulseVector[10] <- 0 
+  birthPulseVector[11] <- 0 
+  birthPulseVector[12] <- 0 
+  
+  # inputs for disease
+  monthsOfPressure      <- 1
+  dogsPerMonthExposed   <- 1
+  monthInitIntroduction <- 25
+  transmissionParam     <- 2.15 * parameter_df[k, 'bite_scale']
+  bitesPerRabidMean <- transmissionParam
+  bitesPerRabidShape    <- 1.33
+  probInfectionFromBite <- 0.49
+  timeLimitExposed      <- 22 
+  timeLimitInfective    <- 3
+  survivalProb          <- 0
+  
+  # inputs for benefits of management
+  bitesPerNonRabid     <- 0.00017/3 
+  bitesPerRabid        <- 0.06756/3 
+  PEPperNonRabidBite   <- 0.991
+  PEPperRabidBite      <- 0.991
+  costPerPEP           <- 754.92
+  lifeLossPerRabidBite <- 0.19
+  
+  # inputs for treatment costs
+  vaccineCost             <- 2.426
+  contraceptionCostFemale <- 150
+  contraceptionCostMale   <- 150
+  sterilizationCostFemale <- 300
+  sterilizationCostMale   <- 200
+  euthanasiaCost          <- 150
+  
+  # inputs for effectiveness of contraception and vaccination
+  timeVaccineEffective       <- 730
+  timeBoosterEffective       <- 1095
+  timeContraEffectiveMales   <- 730
+  timeContraEffectiveFemales <- 730
+  
+  # inputs for contact costs
+  # note: 25, 50, 75, 100, mean 25% 50%, 75%, 100% of specified 
+  #       initial abundance
+  contactCost25  <- 1019.09 * parameter_df[k, 'contact_cost_scale']
+  contactCost50  <- 2757.3 * parameter_df[k, 'contact_cost_scale']
+  contactCost75  <- 4735.89 * parameter_df[k, 'contact_cost_scale']
+  contactCost100 <- 8453.7 * parameter_df[k, 'contact_cost_scale']
+  
+  # input for budget years 1-5    
+  annualBudget     <- rep(0, simulationYears)
+  if (parameter_df[k, 'timing'] == 'annual') {
+    annualBudget[1]  <- parameter_df[k, 'budget'] / 5
+    annualBudget[2]  <- parameter_df[k, 'budget'] / 5
+    annualBudget[3]  <- parameter_df[k, 'budget'] / 5
+    annualBudget[4]  <- parameter_df[k, 'budget'] / 5
+    annualBudget[5]  <- parameter_df[k, 'budget'] / 5
   }
+  if (parameter_df[k, 'timing'] == 'biennial') {
+    annualBudget[1]  <- parameter_df[k, 'budget'] / 3
+    annualBudget[2]  <- 0
+    annualBudget[3]  <- parameter_df[k, 'budget'] / 3
+    annualBudget[4]  <- 0
+    annualBudget[5]  <- parameter_df[k, 'budget'] / 3
+  }
+  if (parameter_df[k, 'timing'] == 'reactive') {
+    annualBudget[1]  <- 0
+    annualBudget[2]  <- 0
+    annualBudget[3]  <- parameter_df[k, 'budget'] / 3
+    annualBudget[4]  <- parameter_df[k, 'budget'] / 3
+    annualBudget[5]  <- parameter_df[k, 'budget'] / 3  
+  }
+  # inputs for strategy  
+  # note: model assumes already sterilized dogs are not re-sterilized. 
+  #       Within the same year dogs will not be vaccinated or contracepted 
+  #       twice. If dogs are re-contancted in a future year, they will be 
+  #       re-vaccinated or re-contracepted
+  # note: contraception and sterilization cannot both equal 1 for same 
+  #       demographic
+  # note: if euthanisia equal 1 for some demographic, 
+  #       all other treatments must equal zero  
+  vaccPuppyMale     <- parameter_df[k, 'puppy_vac']
+  vaccPuppyFemale   <- parameter_df[k, 'puppy_vac']
+  vaccAdultMale     <- 1
+  vaccAdultFemale   <- 1
+  vaccJuvMale       <- 1
+  vaccJuvFemale     <- 1
+  contraPuppyMale   <- 0
+  contraPuppyFemale <- 0
+  contraAdultMale   <- 0
+  contraAdultFemale <- 0
+  contraJuvMale     <- 0
+  contraJuvFemale   <- 0
+  sterPuppyMale     <- 0
+  sterPuppyFemale   <- 0
+  sterAdultMale     <- 0
+  sterAdultFemale   <- parameter_df[k, 'female_ster']
+  sterJuvMale       <- 0
+  sterJuvFemale     <- parameter_df[k, 'female_ster']
+  euthPuppyMale     <- 0
+  euthPuppyFemale   <- 0
+  euthAdultMale     <- 0
+  euthAdultFemale   <- 0
+  euthJuvMale       <- 0
+  euthJuvFemale     <- 0
+  
+  boosterGiven <- TRUE
+  
+  # inputs for management timing
+  mgtMonthVector     <- rep(0, 12)
+  mgtMonthVector[1]  <- 0 
+  mgtMonthVector[2]  <- 0 
+  mgtMonthVector[3]  <- 0
+  mgtMonthVector[4]  <- 1
+  mgtMonthVector[5]  <- 0
+  mgtMonthVector[6]  <- 0
+  mgtMonthVector[7]  <- 0
+  mgtMonthVector[8]  <- 0
+  mgtMonthVector[9]  <- 0
+  mgtMonthVector[10] <- 0
+  mgtMonthVector[11] <- 0
+  mgtMonthVector[12] <- 0
+  ########################################################################################################################
+  
+  ########################################################################################################################
+  # Misc preliminary calculations and assignments:
+  
+  # Get total number of days in simulation:
+  simulationEnd   <- 365 * simulationYears
+  
+  # A vector of month number for use in seasonal timing:
+  monthSeries <- c(rep(1, 31), rep(2, 28), rep(3, 31), rep(4, 30), 
+                   rep(5, 31), rep(6, 30), rep(7, 31), rep(8, 31),
+                   rep(9, 30), rep(10, 31), rep(11, 30), rep(12, 31)) 
+  
+  monthFirstDays <- rep(c(match(1, monthSeries), match(2, monthSeries), match(3, monthSeries), match(4, monthSeries),
+                          match(5, monthSeries), match(6, monthSeries), match(7, monthSeries), match(8, monthSeries),
+                          match(9, monthSeries), match(10, monthSeries), match(11, monthSeries), match(12, monthSeries)),
+                        simulationYears)
+  
+  # Get days of each year that disease will be introduced:
+  pressureMonths <- seq(monthInitIntroduction, monthInitIntroduction + monthsOfPressure - 1)  
+  pressureYears <- (pressureMonths - 1) %/% 12 + 1
+  pressureDays <- list()
+  for (i in 1:simulationYears) {
+    if (sum(pressureYears == i) > 0) {
+      pressureDays[[i]] <- monthFirstDays[pressureMonths[pressureYears == i]]
+    } else {
+      pressureDays[[i]] <- 0
+    }
+  }
+  flush.console()
+  
+  # Calculate demographics of initial population:
+  initialAdults     <- round(initialFracAdult * initialPopSize)
+  initialSubAdults  <- initialPopSize - initialAdults
+  initialPuppies    <- round(initialFracPup * initialSubAdults)
+  initialJuveniles  <- initialSubAdults - initialPuppies
+  
+  # Calculate daily mortality probabilities:
+  pupMortalityProb   <- 1 - (1 - pupAnnMortProb) ^ (1/365)
+  juvMortalityProb   <- 1 - (1 - juvAnnMortProb) ^ (1/365)
+  adultMortalityProb <- 1 - (1 - adultAnnMortProb) ^ (1/365)
+  
+  # Calculate daily litter probabilities:
+  monthDayCount <- c(31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31)
+  if(sum(birthPulseVector) != 12 & sum(birthPulseVector != 0)) {
+    peakDays <- sum(birthPulseVector * monthDayCount)
+    peakProb <- (fractionBirthPulse * expLitterPer) / peakDays
+    offPeakDays <- sum((!birthPulseVector) * monthDayCount)
+    offPeakProb <- ((1-fractionBirthPulse) * expLitterPer) / offPeakDays
+    litterProbability <- rep(offPeakProb, 365)
+    for(m in 1:12) {
+      if(birthPulseVector[m] == 1) {
+        litterProbability[monthSeries == m] <- peakProb
+      }
+    }
+  } else {
+    litterProbability <- rep(expLitterPer / 365, 365)
+  }
+  
+  # Calculate marginal costs of contact:
+  marginalCost1 <- contactCost25 / (initialPopSize * 0.25)
+  marginalCost2 <- contactCost50 / (initialPopSize * 0.25)
+  marginalCost3 <- contactCost75 / (initialPopSize * 0.25)
+  marginalCost4 <- contactCost100 / (initialPopSize * 0.25)
+  marginalCost <- c(marginalCost1, marginalCost2, marginalCost3, marginalCost4)
+  
+  # List days that management will occur:
+  mgtDayVector <- rep(0, 365)
+  for(m in 1:12) {
+    if(mgtMonthVector[m] == 1) {
+      mgtDayVector[monthSeries == m] <- 1
+    }
+  }
+  managementDays <- seq(1, 365)
+  managementDays <- managementDays[mgtDayVector == 1]
+  
+  # A list of traits in the population matrix:
+  traitList <- c('age', 'puppy', 'adult','female',
+                 'sterilized', 'contracepted', 'timeContra',
+                 'vaccinated', 'timeVacc',
+                 'boosted', 'contacted', 'contactCost',
+                 'exposed', 'timeExposed',
+                 'infective', 'timeInfective',
+                 'immune', 'month')
+  
+  # A list of results that will be tracked:
+  censusSeries <- c('abundance', 'puppy', 'adult', 'females', 
+                    'sterilized', 'femalesSterilized',
+                    'contracepted', 'femalesContracepted', 
+                    'vaccinated', 'immune', 'exposed', 'infective',
+                    'PEPs', 'lifeLoss', 'newlyVaccinated') 
+  censusVector <- rep(0, length(censusSeries))
+  names(censusVector) <- censusSeries
+  
+  # Create a 3d array to store results:
+  resultsMatrix <- array(data=NA, dim=c(simulationEnd, length(censusSeries), iterations))
+  colnames(resultsMatrix) <- censusSeries
+  
+  # Create a vector of binary strategy indicators:
+  strategyNames <- c('vaccPuppyMale', 'vaccPuppyFemale',
+                     'vaccAdultMale', 'vaccAdultFemale', 
+                     'vaccJuvMale', 'vaccJuvFemale',
+                     'contraPuppyMale', 'contraPuppyFemale',
+                     'contraAdultMale', 'contraAdultFemale',
+                     'contraJuvMale', 'contraJuvFemale',
+                     'sterPuppyMale', 'sterPuppyFemale',
+                     'sterAdultMale', 'sterAdultFemale', 
+                     'sterJuvMale', 'sterJuvFemale',
+                     'euthPuppyMale', 'euthPuppyFemale',
+                     'euthAdultMale', 'euthAdultFemale', 
+                     'euthJuvMale', 'euthJuvFemale') 
+  strategyVector <- c(vaccPuppyMale, vaccPuppyFemale,
+                      vaccAdultMale, vaccAdultFemale, 
+                      vaccJuvMale, vaccJuvFemale,
+                      contraPuppyMale, contraPuppyFemale,
+                      contraAdultMale, contraAdultFemale, 
+                      contraJuvMale, contraJuvFemale,
+                      sterPuppyMale, sterPuppyFemale,
+                      sterAdultMale, sterAdultFemale, 
+                      sterJuvMale, sterJuvFemale,
+                      euthPuppyMale, euthPuppyFemale,
+                      euthAdultMale, euthAdultFemale, 
+                      euthJuvMale, euthJuvFemale)
+  names(strategyVector) <- strategyNames
+  
+  # Create a cost vector to indicate unit cost of each strategy:
+  strategyCostVector <- c(rep(vaccineCost, 6),
+                          contraceptionCostMale, contraceptionCostFemale,
+                          contraceptionCostMale, contraceptionCostFemale, 
+                          contraceptionCostMale, contraceptionCostFemale,
+                          sterilizationCostMale, sterilizationCostFemale,
+                          sterilizationCostMale, sterilizationCostFemale, 
+                          sterilizationCostMale, sterilizationCostFemale,
+                          rep(euthanasiaCost, 6))
+  names(strategyCostVector) <- strategyNames
+  ########################################################################################################################
+  
+  ########################################################################################################################
+  # Loop through iterations:
+  for(i in 1:iterations) {
+    print(paste('Running iteration', i))
+    flush.console()
+    popMatrix <- InitialPopulation()
+    
+    # Loop through years:
+    for(j in 1:simulationYears) {
+      # reset total spending, number of dogs contacted, and contacted indicator at start of year
+      totalSpending <- 0
+      totalContacted <- 0
+      popMatrix[, 'contacted'] <- 0
+      # get the daily budget for each day of year
+      dailyBudget <- getDailyBudget(j)
+      
+      # Loop through days of the year
+      for(d in 1:365) {
+        popMatrix[, 'month'] <- monthSeries[d]
+        resultsMatrix[(365 * (j-1) + d), ,i] <- CensusFunction()
+        popMatrix <- MortalityFunction()
+        popMatrix <- ReproductionFunction(d)
+        popMatrix <- ImmigrationFunction()
+        popMatrix <- DiseaseProgressionFunction()
+        popMatrix <- DiseaseSpreadFunction()
+        tempVacc <- sum(popMatrix[, 'vaccinated'])
+        if (totalSpending < annualBudget[j]) {
+          mgtReturnList <- ManagementFunction(d, marginalCost, dailyBudget, totalSpending, totalContacted)
+          popMatrix <- mgtReturnList[[1]]
+          totalContacted <- mgtReturnList[[2]]
+          totalSpending <- totalSpending + mgtReturnList[[3]]
+        }
+        # Record new vaccinations:
+        resultsMatrix[(365 * (j-1) + d), 'newlyVaccinated', i] <- sum(popMatrix[, 'vaccinated']) - tempVacc
+        popMatrix <- TimeFunction()
+      }  # close d for loop
+    }  # close j for loop
+  }  # close i for loop
+  ########################################################################################################################
+  
+  ########################################################################################################################
+  # to access resultsMatrix:
+  #   resultsMatrix[day, results series, iteration]
+  
+  # getting means across iterations:
+  meanResults <- matrix(NA, nrow=simulationEnd, ncol=length(censusSeries))
+  for(i in 1:simulationEnd) {
+    for(j in 1:length(censusSeries)) {
+      meanResults[i, j] <- mean(resultsMatrix[i, j, ], na.rm=TRUE)
+    }
+  }
+  ########################################################################################################################
+  
+
+  ########################################################################################################################
+  # get some key results
+  #resultsMatrix[day, results series, iteration]
+  dogDaysOfInfection   <- sum(apply(resultsMatrix[, 'infective', ], 1, mean, na.rm=TRUE))
+  meanAbundance        <- mean(apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE))
+  totalCostOfInfection <- sum(apply(resultsMatrix[, 'PEPs', ], 1, mean, na.rm=TRUE))*costPerPEP
+  totalHumanDeaths     <- sum(apply(resultsMatrix[, 'lifeLoss', ], 1, mean, na.rm=TRUE))
+  totalBudget          <- sum(annualBudget[1:simulationYears])
+  totalVaccinations    <- sum(apply(resultsMatrix[, 'newlyVaccinated', ], 1, mean, na.rm=TRUE))
+  vaccPercentage       <- max(apply(resultsMatrix[, 'vaccinated', ] / resultsMatrix[, 'abundance', ], 
+                                    1, mean, na.rm=TRUE))
+  
+  # resultsMatrix[, 'infective', ] is a matrix with rows=days and columns=iterations
+  # get max prevalence by iteration:
+  # meanAbundance
+  maxPrev <- apply(resultsMatrix[, 'infective', ], 2, max, na.rm=TRUE)
+  parameter_df[k, 'dog_days'] <- round(dogDaysOfInfection, 2)
+  #mean(maxPrev)
+  parameter_df[k, 'prob_outbreak'] <- round(sum(maxPrev > 1)/iterations * 100)
+  parameter_df[k, 'max_prev'] <- round(mean(maxPrev[maxPrev > 1]), 2)
+  #totalVaccinations
+  parameter_df[k, 'max_vacc'] <- round(vaccPercentage * 100)
+  parameter_df[k, 'total_cost'] <- round(totalBudget + totalCostOfInfection)
+  #totalHumanDeaths
+  
+  #install.packages("beepr")
+  #library(beepr)
+  ########################################################################################################################
 }
-########################################################################################################################
 
-
-########################################################################################################################
-# Plot abundance over time
-plot.new()
-abunMax <- max(resultsMatrix[, 'abundance', ]) * 1.1
-daySeries <- seq(1, simulationEnd)
-
-quant0abun   <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.0)
-quant10abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.1)
-quant20abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.2)
-quant30abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.3)
-quant40abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.4)
-quant50abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.5)
-quant60abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.6)
-quant70abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.7)
-quant80abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.8)
-quant90abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.9)
-quant100abun <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 1.0)
-meanAbun = apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE)
-
-abundPlot <- ggplot() +
-  geom_ribbon(aes(x=daySeries, ymax=quant100abun, ymin=quant0abun, fill='full range  ')) +
-  geom_ribbon(aes(x=daySeries, ymax=quant90abun, ymin=quant10abun, fill='percentile 10 to 90  ')) +
-  geom_ribbon(aes(x=daySeries, ymax=quant80abun, ymin=quant20abun, fill='percentile 20 to 80  ')) +
-  geom_ribbon(aes(x=daySeries, ymax=quant70abun, ymin=quant30abun, fill='percentile 30 to 70  ')) +
-  geom_ribbon(aes(x=daySeries, ymax=quant60abun, ymin=quant40abun, fill='percentile 40 to 60  ')) +
-  geom_line(aes(daySeries, quant50abun, colour = 'median  ')) +
-  geom_line(aes(daySeries, meanAbun, colour = 'mean  '), size=1.0) +
-  scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
-                     labels = c('1', '2', '3', '4', '5')) +
-  scale_y_continuous(limits=c(0, abunMax), expand = c(0, 0)) +
-  ylab('abundance') +
-  theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
-  theme(axis.text=element_text(size=26, color='black'), 
-        axis.title=element_text(size=26, face="bold", color='black')) +
-  xlab('') +
-  theme(axis.line = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.border = element_rect(fill=NA, colour='black'),
-        panel.background = element_blank()) +
-  scale_colour_manual(name=NULL, values=c('median  '='#1B4F72',
-                                          'mean  '='black')) +
-  scale_fill_manual(name=NULL, values=c('full range  '='#5DADE2', 
-                                        'percentile 10 to 90  '='#3498DB', 
-                                        'percentile 20 to 80  '='#2E86C1', 
-                                        'percentile 30 to 70  '='#2874A6', 
-                                        'percentile 40 to 60  '='#21618C')) +
-  theme(legend.text.align=0) + 
-  theme(legend.position='none') 
-########################################################################################################################
-
-
-########################################################################################################################
-# Plot disease prevalence over time
-
-daySeries <- seq(1, simulationEnd)
-prevMax <- max(resultsMatrix[, 'infective', ]) * 1.1
-
-quant0inf   <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.0)
-quant10inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.1)
-quant20inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.2)
-quant30inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.3)
-quant40inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.4)
-quant50inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.5)
-quant60inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.6)
-quant70inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.7)
-quant80inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.8)
-quant90inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.9)
-quant100inf <- apply(resultsMatrix[, 'infective', ], 1, quantile, 1.0)
-meanInf = apply(resultsMatrix[, 'infective', ], 1, mean, na.rm=TRUE)
-
-infectPlot <- ggplot() +
-  geom_ribbon(aes(x=daySeries, ymax=quant100inf, ymin=quant0inf, fill='full range  ')) +
-  geom_ribbon(aes(x=daySeries, ymax=quant90inf, ymin=quant10inf, fill='percentile 10 to 90  ')) +
-  geom_ribbon(aes(x=daySeries, ymax=quant80inf, ymin=quant20inf, fill='percentile 20 to 80  ')) +
-  geom_ribbon(aes(x=daySeries, ymax=quant70inf, ymin=quant30inf, fill='percentile 30 to 70  ')) +
-  geom_ribbon(aes(x=daySeries, ymax=quant60inf, ymin=quant40inf, fill='percentile 40 to 60  ')) +
-  geom_line(aes(daySeries, quant50inf, colour = 'median  ')) +
-  geom_line(aes(daySeries, meanInf, colour = 'mean  '), size=1.0) +
-  scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
-                     labels = c('1', '2', '3', '4', '5')) +
-  scale_y_continuous(limits=c(0, prevMax), expand = c(0, 0)) +
-  ylab('disease prevalence') +
-  theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
-  theme(axis.text=element_text(size=26, color='black'), 
-        axis.title=element_text(size=26, face="bold", color='black')) +
-  xlab('') +
-  theme(axis.line = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.border = element_rect(fill=NA, colour='black'),
-        panel.background = element_blank()) +
-  scale_colour_manual(name=NULL, values=c('median  '='#1B4F72',
-                                          'mean  '='black')) +
-  scale_fill_manual(name=NULL, values=c('full range  '='#5DADE2', 
-                                        'percentile 10 to 90  '='#3498DB', 
-                                        'percentile 20 to 80  '='#2E86C1', 
-                                        'percentile 30 to 70  '='#2874A6', 
-                                        'percentile 40 to 60  '='#21618C')) +
-  theme(legend.text.align=0) + 
-  theme(legend.position='none') 
-########################################################################################################################
-
-
-########################################################################################################################
-# Plot vaccinated dogs over time
-
-vaccMax <- max(resultsMatrix[, 'vaccinated', ]) * 1.1
-daySeries <- seq(1, simulationEnd)
-
-quant0vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.0)
-quant10vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.1)
-quant20vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.2)
-quant30vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.3)
-quant40vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.4)
-quant50vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.5)
-quant60vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.6)
-quant70vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.7)
-quant80vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.8)
-quant90vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.9)
-quant100vac <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 1.0)
-meanVac = apply(resultsMatrix[, 'vaccinated', ], 1, mean, na.rm=TRUE)
-
-vaccPlot <- ggplot() +
-  geom_ribbon(aes(x=daySeries, ymax=quant100vac, ymin=quant0vac, fill='full range  ')) +
-  geom_ribbon(aes(x=daySeries, ymax=quant90vac, ymin=quant10vac, fill='percentile 10 to 90  ')) +
-  geom_ribbon(aes(x=daySeries, ymax=quant80vac, ymin=quant20vac, fill='percentile 20 to 80  ')) +
-  geom_ribbon(aes(x=daySeries, ymax=quant70vac, ymin=quant30vac, fill='percentile 30 to 70  ')) +
-  geom_ribbon(aes(x=daySeries, ymax=quant60vac, ymin=quant40vac, fill='percentile 40 to 60  ')) +
-  geom_line(aes(daySeries, quant50vac, colour = 'median  ')) +
-  geom_line(aes(daySeries, meanVac, colour = 'mean  '), size=1.0) +
-  scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
-                     labels = c('1', '2', '3', '4', '5')) +
-  scale_y_continuous(limits=c(0, vaccMax), expand = c(0, 0)) +
-  ylab('vacc dogs in pop') +
-  theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
-  theme(axis.text=element_text(size=26, color='black'), 
-        axis.title=element_text(size=26, face="bold", color='black')) +
-  xlab('year') +
-  theme(axis.line = element_blank(),
-        panel.grid.major = element_blank(),
-        panel.grid.minor = element_blank(),
-        panel.border = element_rect(fill=NA, colour='black'),
-        panel.background = element_blank()) +
-  scale_colour_manual(name=NULL, values=c('median  '='#1B4F72',
-                                          'mean  '='black')) +
-  scale_fill_manual(name=NULL, values=c('full range  '='#5DADE2', 
-                                        'percentile 10 to 90  '='#3498DB', 
-                                        'percentile 20 to 80  '='#2E86C1', 
-                                        'percentile 30 to 70  '='#2874A6', 
-                                        'percentile 40 to 60  '='#21618C')) +
-  theme(legend.text.align=0) +
-  theme(legend.text=element_text(size=26)) +
-  theme(legend.position='bottom') 
-########################################################################################################################
-
-grid.draw(rbind(ggplotGrob(abundPlot), ggplotGrob(infectPlot), ggplotGrob(vaccPlot)))
-
-csv_data = data.frame(cbind(daySeries, meanAbun, meanInf, meanVac))
-
-########################################################################################################################
-# get some key results
-#resultsMatrix[day, results series, iteration]
-dogDaysOfInfection   <- sum(apply(resultsMatrix[, 'infective', ], 1, mean, na.rm=TRUE))
-meanAbundance        <- mean(apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE))
-totalCostOfInfection <- sum(apply(resultsMatrix[, 'PEPs', ], 1, mean, na.rm=TRUE))*costPerPEP
-totalHumanDeaths     <- sum(apply(resultsMatrix[, 'lifeLoss', ], 1, mean, na.rm=TRUE))
-totalBudget          <- sum(annualBudget[1:simulationYears])
-totalVaccinations    <- sum(apply(resultsMatrix[, 'newlyVaccinated', ], 1, mean, na.rm=TRUE))
-vaccPercentage       <- max(apply(resultsMatrix[, 'vaccinated', ] / resultsMatrix[, 'abundance', ], 
-                                  1, mean, na.rm=TRUE))
-
-
-# resultsMatrix[, 'infective', ] is a matrix with rows=days and columns=iterations
-# get max prevalence by iteration:
-# meanAbundance
-maxPrev <- apply(resultsMatrix[, 'infective', ], 2, max, na.rm=TRUE)
-round(dogDaysOfInfection, 2)
-#mean(maxPrev)
-round(sum(maxPrev > 1)/iterations * 100)
-round(mean(maxPrev[maxPrev > 1]), 2)
-#totalVaccinations
-round(vaccPercentage * 100)
-round(totalBudget + totalCostOfInfection)
-#totalHumanDeaths
-
-#install.packages("beepr")
-#library(beepr)
+write.csv(parameter_df, 'Manuscript_Scenarios_Base.csv')
 beep(2)
-########################################################################################################################
-

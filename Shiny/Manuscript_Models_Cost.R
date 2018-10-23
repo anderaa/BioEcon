@@ -550,7 +550,7 @@ TimeFunction <- function() {
 ########################################################################################################################
 # This is the loop that reads in the parameter values from each of the simulations presented in the paper.
 # It adds the results of each to the parameter_df, then writes it back to disk when finished.
-parameter_df <- read.csv('Manuscript_Scenarios.csv', stringsAsFactors=FALSE)
+parameter_df <- read.csv('Manuscript_Scenarios_Cost.csv', stringsAsFactors=FALSE)
 parameter_df['dog_days'] <- NA
 parameter_df['prob_outbreak'] <- NA
 parameter_df['max_prev'] <- NA
@@ -558,7 +558,7 @@ parameter_df['max_vacc'] <- NA
 parameter_df['total_cost'] <- NA
 
 for(k in seq(1, nrow(parameter_df))) {
-
+  
   # inputs for simulation
   simulationYears <- 5
   simulationEnd   <- 365 * simulationYears
@@ -663,7 +663,7 @@ for(k in seq(1, nrow(parameter_df))) {
     annualBudget[4]  <- 0
     annualBudget[5]  <- parameter_df[k, 'budget'] / 3
   }
-  if (parameter_df[k, 'timing'] == 'biennial') {
+  if (parameter_df[k, 'timing'] == 'reactive') {
     annualBudget[1]  <- 0
     annualBudget[2]  <- 0
     annualBudget[3]  <- parameter_df[k, 'budget'] / 3
@@ -910,7 +910,7 @@ for(k in seq(1, nrow(parameter_df))) {
   }
   ########################################################################################################################
   
-
+  
   ########################################################################################################################
   # get some key results
   #resultsMatrix[day, results series, iteration]
@@ -941,5 +941,5 @@ for(k in seq(1, nrow(parameter_df))) {
   ########################################################################################################################
 }
 
-write.csv(parameter_df, 'Manuscript_Scenarios.csv')
+write.csv(parameter_df, 'Manuscript_Scenarios_Cost.csv')
 beep(2)
