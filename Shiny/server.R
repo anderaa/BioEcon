@@ -1087,7 +1087,7 @@ output$graphicalResults <- renderPlot({
 # Numerical results:
 output$numericalResults <- renderPlot({
 
-  #resultsMatrix        <- getResultsMatrix()
+  resultsMatrix        <- getResultsMatrix()
   costPerPEP           <- getCostPerPEP()
   annualBudget         <- getAnnualBudget()
   simulationYears      <- 5
@@ -1113,13 +1113,20 @@ output$numericalResults <- renderPlot({
 
 
 ########################################################################################################################
-test <- resultsMatrix[, , 1]
+datasetInput <- reactive({
+  resultsMatrix <- getResultsMatrix()
+  data <- apply(resultsMatrix, c(1, 2), mean)
+  day <- seq(1, nrow(data))
+  data <- cbind(day, data)
+})
+
 output$downloadData <- downloadHandler(
-  filename = function() {
-    paste(input$dataset, ".csv", sep = "")
-  },
+  # filename = function() {
+  #   paste(input$dataset, ".csv", sep = "")
+  # },
+  filename = 'results.csv',
   content = function(file) {
-    write.csv(test, file, row.names = FALSE)
+    write.csv(datasetInput(), file, row.names = FALSE)
   }
 )
 ########################################################################################################################
