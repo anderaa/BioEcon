@@ -1111,7 +1111,6 @@ output$numericalResults <- renderPlot({
 })  # close renderPlot
 ########################################################################################################################
 
-
 ########################################################################################################################
 datasetInput <- reactive({
   resultsMatrix <- getResultsMatrix()
@@ -1121,9 +1120,6 @@ datasetInput <- reactive({
 })
 
 output$downloadData <- downloadHandler(
-  # filename = function() {
-  #   paste(input$dataset, ".csv", sep = "")
-  # },
   filename = 'results.csv',
   content = function(file) {
     write.csv(datasetInput(), file, row.names = FALSE)
@@ -1132,4 +1128,4 @@ output$downloadData <- downloadHandler(
 ########################################################################################################################
 
 })  # close shinyServer
-################################################################################
+########################################################################################################################
