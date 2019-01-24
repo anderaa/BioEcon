@@ -303,7 +303,7 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
           tabPanel('Graphical Output',
             plotOutput('graphicalResults', height='900px')),
           tabPanel('Numerical Output',
-            downloadButton("downloadData", "Download"),
+            downloadButton("downloadData", "Download Detailed Results"),
             plotOutput('numericalResults'))
             
         )  # close Model Output navlistPanel
