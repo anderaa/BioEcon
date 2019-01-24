@@ -37,51 +37,52 @@
 
 ########################################################################################################################
 library(shiny)
+########################################################################################################################
 
 
 # Define UI for application:
 shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'styles.css'),
-  img(src = "logo.png", height = 47, align='left'),      
-  titlePanel(strong('BioEcon for Canine Rabies - v0.4'), windowTitle='BioEcon'), 
-    tabsetPanel(id='mainTabs', type='pills',
-      tabPanel('Model Setup',
+  img(src = "logo.png", height = 47, align='left'),
+    titlePanel(strong('BioEcon for Canine Rabies - v0.4'), windowTitle='BioEcon'),
+     tabsetPanel(id='mainTabs', type='pills',
+     tabPanel('Model Setup',
         navlistPanel('Model Setup', widths=c(3, 9),
-                     
+
           tabPanel('Basic Inputs',
-            numericInput('iterations', label='number of iterations', value=5), 
-            br(), 
-            numericInput('initialPopSize', label='initial abundance on January 1', value=463), 
+            numericInput('iterations', label='number of iterations', value=5),
             br(),
-            sliderInput('initialFracAdult', label='fraction of initial population that are adult (age > 299 days)', 
-                        min=0, max=1, value=0.61, step=0.01, ticks=FALSE), 
+            numericInput('initialPopSize', label='initial abundance on January 1', value=463),
             br(),
-            sliderInput('initialFracPup', label='fraction of juveniles (age < 300 days) that are puppies 
-                        (age < 90 days)', min=0, max=1, value=0.33, step=0.01, ticks=FALSE), 
+            sliderInput('initialFracAdult', label='fraction of initial population that are adult (age > 299 days)',
+                        min=0, max=1, value=0.61, step=0.01, ticks=FALSE),
+            br(),
+            sliderInput('initialFracPup', label='fraction of juveniles (age < 300 days) that are puppies
+                        (age < 90 days)', min=0, max=1, value=0.33, step=0.01, ticks=FALSE),
             br(),
             numericInput('carryingCap', label='carrying capacity', value=577)
           ),  # close Basic Inputs tabPanel
 
           tabPanel('Entry and Exit',
             fluidRow(
-              column(4, 
+              column(4,
                 sliderInput('pupAnnMortProb', label='annual puppy mortality probability',
-                            min=0.0, max=1.0, value=0.90, ticks=FALSE), 
+                            min=0.0, max=1.0, value=0.90, ticks=FALSE),
                 br(),
                 sliderInput('juvAnnMortProb', label='annual juvenile mortality probability',
-                            min=0.0, max=1.0, value=0.63, ticks=FALSE), 
+                            min=0.0, max=1.0, value=0.63, ticks=FALSE),
                 br(),
                 sliderInput('adultAnnMortProb', label='annual adult mortality probability',
-                            min=0.0, max=1.0, value=0.32, ticks=FALSE), 
+                            min=0.0, max=1.0, value=0.32, ticks=FALSE),
                 br(),
                 sliderInput('emigrationProb', label='annual out-migration probability',
-                            min=0.0, max=1.0, value=0, ticks=FALSE), 
+                            min=0.0, max=1.0, value=0, ticks=FALSE),
                 br(),
                 numericInput('immigrantDogs', label='expected annual in-migration', value=131)
               ),  # close column
               column(1),
-              column(4, 
-                sliderInput('expectedLittersPFY', label='annual litters per fertile female', 
-                            min=0, max=1, value=0.31, step=0.01, ticks=FALSE), 
+              column(4,
+                sliderInput('expectedLittersPFY', label='annual litters per fertile female',
+                            min=0, max=1, value=0.31, step=0.01, ticks=FALSE),
                 br(),
                 tags$b('If there is a birth pulse, check the months of occurrence, otherwise ignore the inputs below.'),
                 checkboxGroupInput('birthPulseMonths', label = '',
@@ -98,36 +99,36 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
                                      'November' = 'nov',
                                      'December' = 'dec'),
                                      selected = c()),
-                sliderInput('fractionBirthPulse', label='fraction of litters born during pulse', 
-                            min=0, max=1, value=0.0, step=0.01, ticks=FALSE), 
+                sliderInput('fractionBirthPulse', label='fraction of litters born during pulse',
+                            min=0, max=1, value=0.0, step=0.01, ticks=FALSE),
                 br()
               )  # close column
             )  # close fluid row
           ),  # close Entry and Exit tabPanel
 
           tabPanel('Disease Transmission',
-            sliderInput('monthInitIntroduction', label='month of the initial introduction', 
-                        min=1, max=48, value=25, step=1, ticks=FALSE, sep=''), 
+            sliderInput('monthInitIntroduction', label='month of the initial introduction',
+                        min=1, max=48, value=25, step=1, ticks=FALSE, sep=''),
             br(),
-            sliderInput('sequentialMonthsIntro', label='number of sequential months of introduction ', 
-                        min=1, max=12, value=1, step=1, ticks=FALSE, sep=''), 
+            sliderInput('sequentialMonthsIntro', label='number of sequential months of introduction ',
+                        min=1, max=12, value=1, step=1, ticks=FALSE, sep=''),
             br(),
-            sliderInput('dogsPerIntro', label='number of dogs exposed per month ', 
-                        min=0, max=50, value=1, step=1, ticks=FALSE, sep=''), 
+            sliderInput('dogsPerIntro', label='number of dogs exposed per month ',
+                        min=0, max=50, value=1, step=1, ticks=FALSE, sep=''),
             br(),
-            sliderInput('transmissionParam', label='mean bites per rabid dog while infectious', 
+            sliderInput('transmissionParam', label='mean bites per rabid dog while infectious',
                         min=0.0, max=4.0, value=2.15, step=0.05, ticks=FALSE, sep='')
           ),  # close Disease Transmission tabPanel
 
           tabPanel('Disease Impacts',
             numericInput('bitesPerNonRabid', label='daily bites per non-rabid', value=round(0.00017/3, 5)),
-            numericInput('bitesPerRabid', label='daily bites per rabid', value=round(0.06756/3, 5)), 
+            numericInput('bitesPerRabid', label='daily bites per rabid', value=round(0.06756/3, 5)),
             br(),
             sliderInput('PEPperNonRabidBite', label='PEP per non-rabid bite',
                         min=0.0, max=1.0, value=0.991, ticks=FALSE),
-            sliderInput('PEPperRabidBite', label='PEP per rabid bite', min=0.0, max=1.0, value=0.991, ticks=FALSE), 
+            sliderInput('PEPperRabidBite', label='PEP per rabid bite', min=0.0, max=1.0, value=0.991, ticks=FALSE),
             br(),
-            numericInput('costPerPEP', label='cost per PEP', value=754.92), 
+            numericInput('costPerPEP', label='cost per PEP', value=754.92),
             br(),
             sliderInput('lifeLossPerRabidBite', label='probability of human death from rabid bite (w/out PEP)',
                         min=0.0, max=1.0, value=0.19, step=0.01, ticks=FALSE)
@@ -135,7 +136,7 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
 
           tabPanel('Management Costs',
             fluidRow(
-              column(3, 
+              column(3,
                 numericInput('vaccineCost', label='cost per vaccination', value=2.426),
                 numericInput('contraceptionCostFemale', label='cost per female contraception', value=150),
 			          numericInput('contraceptionCostMale', label='cost per male contraception', value=150),
@@ -145,24 +146,24 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
 			        ),  # close column
               column(1),
               column(6,
-                tags$b('The following inputs relate ONLY to the cost of contacting or capturing dogs. When answering, 
-                        please ignore any costs that occur once dogs are contacted (e.g. vaccination). At the specified 
-                        initial abundance of the population how much would it cost to contact or capture in a single 
-                        year:'), 
+                tags$b('The following inputs relate ONLY to the cost of contacting or capturing dogs. When answering,
+                        please ignore any costs that occur once dogs are contacted (e.g. vaccination). At the specified
+                        initial abundance of the population how much would it cost to contact or capture in a single
+                        year:'),
                 br(), br(),
                 numericInput('contactCost25', label='25% of the population at initial abundance', value=1019.09),
                 numericInput('contactCost50', label='50% of the population at initial abundance', value=2757.3),
                 numericInput('contactCost75', label='75% of the population at initial abundance', value=4735.89),
                 numericInput('contactCost100', label='100% of the population at initial abundance', value=8453.7),
-                helpText('HINT: Per-dog capture or contact costs are likely to increase as more dogs are captured 
+                helpText('HINT: Per-dog capture or contact costs are likely to increase as more dogs are captured
                           or contacted.')
               )  # close column
             )  # close fluidRow
           ),  # close Management Costs tabPanel
-	   
+
           tabPanel('Management Strategy',
             fluidRow(
-              column(12, 
+              column(12,
                 h4('Strategies to be applied to captured dogs:'))
               ),  # close column
             fluidRow(
@@ -174,8 +175,8 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
                                      'juvenile males' = 'jm',
                                      'adult females' = 'af',
                                      'adult males' = 'am'))
-              ),  # close column  
-              column(3, 
+              ),  # close column
+              column(3,
                 checkboxGroupInput('sterDemoInput', label = 'Sterilization',
                                    c('puppy females' = 'pf',
                                      'puppy males' = 'pm',
@@ -184,7 +185,7 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
                                      'adult females' = 'af',
                                      'adult males' = 'am'))
               ),  # close column
-              column(3, 
+              column(3,
                 checkboxGroupInput('contraDemoInput', label = 'Contraception',
                                    c('puppy females' = 'pf',
                                      'puppy males' = 'pm',
@@ -193,7 +194,7 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
                                      'adult females' = 'af',
                                      'adult males' = 'am'))
               ),  # close column
-              column(3, 
+              column(3,
                 checkboxGroupInput('euthDemoInput', label = 'Euthanasia',
                                    c('puppy females' = 'pf',
                                      'puppy males' = 'pm',
@@ -204,9 +205,9 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
               )  # close column
             ),  # close fluidRow
             fluidRow(
-              column(1), 
+              column(1),
               column(10,
-                helpText('WARNING: If euthanasia is selected for a demographic category, other selected options 
+                helpText('WARNING: If euthanasia is selected for a demographic category, other selected options
                           for the same group will be ignored. Addtionally, if sterilization and contraception
                           are both selected for the same demographic category, contraception will be ignored
                           and only sterilization will occur.')
@@ -214,12 +215,12 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
             ),  # close fluidRow
             fluidRow(
               column(12,
-                     selectInput('boosterGiven', label='Is a booster vaccine given if an already-vaccinated dog is 
+                     selectInput('boosterGiven', label='Is a booster vaccine given if an already-vaccinated dog is
                                  re-contacted?', choices=list('no'=FALSE, 'yes'=TRUE), selected=TRUE)
               ) # close column
             ),  # close fluidRow
             fluidRow(
-              column(5, 
+              column(5,
                 tags$b('Check months that managment occurs:'),
                 checkboxGroupInput('managementMonths', label = '',
                                    c('January' = 'jan',
@@ -235,39 +236,39 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
                                      'November' = 'nov',
                                      'December' = 'dec'),
                                     selected = c())
-              ),  # close column 
+              ),  # close column
               column(1),
               column(6,
                 br(),
                 tags$b('Please ignore the inputs below if irrelevant for your strategy.'),
                 br(), br(),
                 selectInput('timeVaccineEffective', label='vaccine duration',
-                            choices=list('0.5 year'=183, '1 year'=365, 
+                            choices=list('0.5 year'=183, '1 year'=365,
                                          '1.5 years'=548, '2 years'=730,
-                                         '3 years'=1095, '4 years'=1460, 
-                                         '5 years'=1825, 
-                                         'permanent'=999999), 
+                                         '3 years'=1095, '4 years'=1460,
+                                         '5 years'=1825,
+                                         'permanent'=999999),
                             selected=730),
                 selectInput('timeBoosterEffective', label='booster duration',
-                            choices=list('0.5 year'=183, '1 year'=365, 
+                            choices=list('0.5 year'=183, '1 year'=365,
                                          '1.5 years'=548, '2 years'=730,
-                                         '3 years'=1095, '4 years'=1460, 
-                                         '5 years'=1825, 
+                                         '3 years'=1095, '4 years'=1460,
+                                         '5 years'=1825,
                                          'permanent'=999999),
                             selected=1095),
                 selectInput('timeContraEffectiveFemales', label='female contraception duration',
-                            choices=list('0.5 year'=183, '1 year'=365, 
+                            choices=list('0.5 year'=183, '1 year'=365,
                                          '1.5 years'=548, '2 years'=730,
-                                         '3 years'=1095, '4 years'=1460, 
-                                         '5 years'=1825, 
-                                         'permanent'=999999), 
+                                         '3 years'=1095, '4 years'=1460,
+                                         '5 years'=1825,
+                                         'permanent'=999999),
                             selected=730),
                 selectInput('timeContraEffectiveMales', label='male contraception duration',
-                            choices=list('0.5 year'=183, '1 year'=365, 
+                            choices=list('0.5 year'=183, '1 year'=365,
                                          '1.5 years'=548, '2 years'=730,
-                                         '3 years'=1095, '4 years'=1460, 
-                                         '5 years'=1825, 
-                                         'permanent'=999999), 
+                                         '3 years'=1095, '4 years'=1460,
+                                         '5 years'=1825,
+                                         'permanent'=999999),
                             selected=730)
               )  # close column
             )  # close fluidRow
@@ -282,41 +283,43 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
                 numericInput('annualBudget4', label='year 4 budget', value=0),
                 numericInput('annualBudget5', label='year 5 budget', value=0)
               )  # close column
-            )  # close fluidRow                   
+            )  # close fluidRow
           ),  # close Budget Information tabPanel
 
-          tabPanel('Run', 
+          tabPanel('Run',
                    br(), br(), br(), br(), br(), br(), br(), br(),
                    tags$head(
                    tags$style(HTML('#run{background-color:orange}'))
                    ),
             actionButton('run', 'Run Simulation'),
-            helpText('Progress through the iterations will be displayed inthe upper-right and results will be 
+            helpText('Progress through the iterations will be displayed inthe upper-right and results will be
                       displayed after all iterations are complete.')
           )  # close Run tabPanel
         )  # close Model Setup navlistPanel
-      ),  # close Model Setup tabPanel
+     ),  # close Model Setup tabPanel
 
       tabPanel('Model Output',
-        navlistPanel('Model Output', widths=c(3, 9), 
+        navlistPanel('Model Output', widths=c(3, 9),
           tabPanel('Graphical Output',
             plotOutput('graphicalResults', height='900px')),
           tabPanel('Numerical Output',
+            downloadButton("downloadData", "Download"),
             plotOutput('numericalResults'))
+            
         )  # close Model Output navlistPanel
       ),  # close Model Output tabPanel
 
       tabPanel('About', br(),
-        tags$b('BioEcon for Canine Rabies is an individual-based, stochastic simulation model that forecasts the 
-                economic and biological results of management.'), 
+        tags$b('BioEcon for Canine Rabies is an individual-based, stochastic simulation model that forecasts the
+                economic and biological results of management.'),
         br(), br(),
         'Built by Aaron Anderson, Johann Kotze, Brody Hatch, and Jordan Navin',
         br(), br(),
         'Version 0.4. Last updated June 20, 2018.',
         br(), br(),
-        'Inquiries and bugs to: Aaron.M.Anderson@aphis.usda.gov', 
+        'Inquiries and bugs to: Aaron.M.Anderson@aphis.usda.gov',
         br(), br(),
-        'Custom builds available.', 
+        'Custom builds available.',
         br(), br(),
         img(src = "nwrcLogo.png", height = 75, align='left'),
         br(), br(), br(), br(), br(),
@@ -341,7 +344,6 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
         LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
         OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
         SOFTWARE.'
-        
       )  # close Help tabPanel
     )  # close mainTabs tabsetPanel
 )  # close fluidPage

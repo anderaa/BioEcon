@@ -40,7 +40,7 @@ library(beepr)
 # inputs for simulation
 simulationYears <- 5
 simulationEnd   <- 365 * simulationYears
-iterations      <- 5000
+iterations      <- 5
 
 # inputs for initial population
 initialPopSize    <- 463
@@ -379,7 +379,7 @@ MortalityFunction <- function() {
   emigDraw  <- runif(nrow(popMatrix))
   popMatrix <- popMatrix[emigDraw > emigrationProb, , drop=FALSE]
   
-  # Induce mortality:
+  # Induce standard and age-related mortality:
   n <- nrow(popMatrix)
   mortProbVector <- rep(adultMortalityProb, n)
   mortProbVector[popMatrix[, 'age'] <= maxJuvAge]  <- juvMortalityProb
@@ -387,8 +387,15 @@ MortalityFunction <- function() {
   mortDraw <- runif(n)
   popMatrix <- popMatrix[mortDraw > mortProbVector, , drop=FALSE]
   popMatrix <- popMatrix[maxAge > popMatrix[, 'age'], , drop=FALSE]
+  
+  # Censor the population to carrying capacity:
   n <- nrow(popMatrix)
-  popMatrix <- popMatrix[sample(seq(1, n), min(carryingCap, n), replace=FALSE), , drop=FALSE]
+  mortProbVector <- rep(adultMortalityProb, n)
+  mortProbVector[popMatrix[, 'age'] <= maxJuvAge]  <- juvMortalityProb
+  mortProbVector[popMatrix[, 'age'] <= maxPuppyAge] <- pupMortalityProb
+  survProbVector <- 1 - mortProbVector
+  survivors <- sample(seq(1, n), min(carryingCap, n), prob=survProbVector, replace=FALSE)
+  popMatrix <- popMatrix[survivors, , drop=FALSE]
   
   return(popMatrix)
 }
@@ -1041,7 +1048,7 @@ vaccPlot <- ggplot() +
   theme(legend.position='bottom') 
 ########################################################################################################################
 
-grid.draw(rbind(ggplotGrob(abundPlot), ggplotGrob(infectPlot), ggplotGrob(vaccPlot)))
+grid.draw(rbind(ggplotGrob(abundPlot), ggplotGrob(infectPlot), ggplotGrob(vaccPlot), size='last'))
 
 csv_data = data.frame(cbind(daySeries, meanAbun, meanInf, meanVac))
 

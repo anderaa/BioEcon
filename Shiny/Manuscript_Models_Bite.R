@@ -95,7 +95,7 @@ MortalityFunction <- function() {
   emigDraw  <- runif(nrow(popMatrix))
   popMatrix <- popMatrix[emigDraw > emigrationProb, , drop=FALSE]
   
-  # Induce mortality:
+  # Induce standard and age-related mortality:
   n <- nrow(popMatrix)
   mortProbVector <- rep(adultMortalityProb, n)
   mortProbVector[popMatrix[, 'age'] <= maxJuvAge]  <- juvMortalityProb
@@ -103,8 +103,15 @@ MortalityFunction <- function() {
   mortDraw <- runif(n)
   popMatrix <- popMatrix[mortDraw > mortProbVector, , drop=FALSE]
   popMatrix <- popMatrix[maxAge > popMatrix[, 'age'], , drop=FALSE]
+  
+  # Censor the population to carrying capacity:
   n <- nrow(popMatrix)
-  popMatrix <- popMatrix[sample(seq(1, n), min(carryingCap, n), replace=FALSE), , drop=FALSE]
+  mortProbVector <- rep(adultMortalityProb, n)
+  mortProbVector[popMatrix[, 'age'] <= maxJuvAge]  <- juvMortalityProb
+  mortProbVector[popMatrix[, 'age'] <= maxPuppyAge] <- pupMortalityProb
+  survProbVector <- 1 - mortProbVector
+  survivors <- sample(seq(1, n), min(carryingCap, n), prob=survProbVector, replace=FALSE)
+  popMatrix <- popMatrix[survivors, , drop=FALSE]
   
   return(popMatrix)
 }
