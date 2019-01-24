@@ -961,7 +961,8 @@ output$graphicalResults <- renderPlot({
                          labels = c('1', '2', '3', '4', '5')) +
       scale_y_continuous(limits=c(0, abunMax), expand = c(0, 0)) +
       ylab('abundance') +
-      theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
+      
+      theme(axis.title.y=element_text(margin=margin(0,30,0,0))) +
       theme(axis.text=element_text(size=12, color='black'),
             axis.title=element_text(size=14, face="bold", color='black')) +
       xlab('') +
@@ -1008,7 +1009,7 @@ output$graphicalResults <- renderPlot({
                          labels = c('1', '2', '3', '4', '5')) +
       scale_y_continuous(limits=c(0, prevMax), expand = c(0, 0)) +
       ylab('disease prevalence') +
-      theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
+      theme(axis.title.y=element_text(margin=margin(0,30,0,0))) +
       theme(axis.text=element_text(size=12, color='black'),
             axis.title=element_text(size=14, face="bold", color='black')) +
       xlab('') +
@@ -1055,7 +1056,7 @@ output$graphicalResults <- renderPlot({
                          labels = c('1', '2', '3', '4', '5')) +
       scale_y_continuous(limits=c(0, vaccMax), expand = c(0, 0)) +
       ylab('vacc dogs in pop') +
-      theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
+      theme(axis.title.y=element_text(margin=margin(0,30,0,0))) +
       theme(axis.text=element_text(size=12, color='black'),
             axis.title=element_text(size=14, face="bold", color='black')) +
       xlab('year') +
