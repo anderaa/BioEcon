@@ -50,6 +50,7 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
 
           tabPanel('Basic Inputs',
             numericInput('iterations', label='number of iterations', value=5),
+            helpText('HINT: We recomment at least 100 iterations for final analysis.'),
             br(),
             numericInput('initialPopSize', label='initial abundance on January 1', value=463),
             br(),
@@ -235,7 +236,7 @@ shinyUI(fluidPage(tags$link(rel = 'stylesheet', type = 'text/css', href = 'style
                                      'October' = 'oct',
                                      'November' = 'nov',
                                      'December' = 'dec'),
-                                    selected = c())
+                                    selected = 'apr')
               ),  # close column
               column(1),
               column(6,

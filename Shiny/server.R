@@ -979,9 +979,9 @@ output$graphicalResults <- renderPlot({
                                             'percentile 30 to 70  '='#2874A6',
                                             'percentile 40 to 60  '='#21618C')) +
       theme(legend.text.align=0) +
-      theme(legend.position='none')
+      theme(legend.position='top')
     
-    setProgress(40, message='Updating plots')
+    setProgress(25, message='Updating plots')
 
     # Construct the disease prevalence plot:
     quant0inf   <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.0)
@@ -996,7 +996,7 @@ output$graphicalResults <- renderPlot({
     quant90inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.9)
     quant100inf <- apply(resultsMatrix[, 'infective', ], 1, quantile, 1.0)
     meanInf = apply(resultsMatrix[, 'infective', ], 1, mean, na.rm=TRUE)
-  
+    
     infectPlot <- ggplot() +
       geom_ribbon(aes(x=daySeries, ymax=quant100inf, ymin=quant0inf, fill='full range  ')) +
       geom_ribbon(aes(x=daySeries, ymax=quant90inf, ymin=quant10inf, fill='percentile 10 to 90  ')) +
@@ -1008,7 +1008,7 @@ output$graphicalResults <- renderPlot({
       scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
                          labels = c('1', '2', '3', '4', '5')) +
       scale_y_continuous(limits=c(0, prevMax), expand = c(0, 0)) +
-      ylab('disease prevalence') +
+      ylab('count of inf dogs') +
       theme(axis.title.y=element_text(margin=margin(0,30,0,0))) +
       theme(axis.text=element_text(size=12, color='black'),
             axis.title=element_text(size=14, face="bold", color='black')) +
@@ -1027,9 +1027,9 @@ output$graphicalResults <- renderPlot({
                                             'percentile 40 to 60  '='#21618C')) +
       theme(legend.text.align=0) +
       theme(legend.position='none')
-  
-    setProgress(70, message='Updating plots')
-
+    
+    setProgress(45, message='Updating plots')
+    
     # Construct the vaccination plot:
     quant0vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.0)
     quant10vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.1)
@@ -1043,7 +1043,7 @@ output$graphicalResults <- renderPlot({
     quant90vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.9)
     quant100vac <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 1.0)
     meanVac = apply(resultsMatrix[, 'vaccinated', ], 1, mean, na.rm=TRUE)
-  
+    
     vaccPlot <- ggplot() +
       geom_ribbon(aes(x=daySeries, ymax=quant100vac, ymin=quant0vac, fill='full range  ')) +
       geom_ribbon(aes(x=daySeries, ymax=quant90vac, ymin=quant10vac, fill='percentile 10 to 90  ')) +
@@ -1055,11 +1055,11 @@ output$graphicalResults <- renderPlot({
       scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
                          labels = c('1', '2', '3', '4', '5')) +
       scale_y_continuous(limits=c(0, vaccMax), expand = c(0, 0)) +
-      ylab('vacc dogs in pop') +
+      ylab('count of vacc dogs') +
       theme(axis.title.y=element_text(margin=margin(0,30,0,0))) +
       theme(axis.text=element_text(size=12, color='black'),
             axis.title=element_text(size=14, face="bold", color='black')) +
-      xlab('year') +
+      xlab('') + 
       theme(axis.line = element_blank(),
             panel.grid.major = element_blank(),
             panel.grid.minor = element_blank(),
@@ -1073,12 +1073,69 @@ output$graphicalResults <- renderPlot({
                                             'percentile 30 to 70  '='#2874A6',
                                             'percentile 40 to 60  '='#21618C')) +
       theme(legend.text.align=0) +
-      theme(legend.position='bottom')
+      theme(legend.position='none')
     
+    setProgress(65, message='Updating plots')
+    
+    # Construct the outbreak size plot:
+    infective <- resultsMatrix[, 'infective', ]
+    totalInf <- rowSums(infective)
+    iterWithInf <- rowSums(infective > 0)
+    meanOutbreakSize <- totalInf / iterWithInf
+    meanOutbreakSize[meanOutbreakSize == 'NaN'] <- 0
+    
+    outbreakPlot <- ggplot() +
+      geom_line(aes(daySeries, meanOutbreakSize, colour = 'mean  '), size=1.0) +
+      scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
+                         labels = c('1', '2', '3', '4', '5')) +
+      scale_y_continuous(limits=c(0, prevMax), expand = c(0, 0)) +
+      ylab('mean outbreak size') +
+      theme(axis.title.y=element_text(margin=margin(0,30,0,0))) +
+      theme(axis.text=element_text(size=12, color='black'),
+            axis.title=element_text(size=14, face="bold", color='black')) +
+      xlab('') +
+      theme(axis.line = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.border = element_rect(fill=NA, colour='black'),
+            panel.background = element_blank()) +
+      scale_colour_manual(name=NULL, values=c('mean  '='black')) +
+      theme(legend.text.align=0) +
+      theme(legend.position='none')
+    
+    setProgress(85, message='Updating plots')
+    
+    # construct the outbreak probability plot
+    infective <- resultsMatrix[, 'infective', ] 
+    outbreakProb <- rowSums(infective > 1) / iterations
+    probPlot <- ggplot() +
+      geom_line(aes(daySeries, outbreakProb, colour = 'mean  '), size=1.0) +
+      scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
+                         labels = c('1', '2', '3', '4', '5')) +
+      scale_y_continuous(limits=c(0, 1), expand = c(0, 0)) +
+      ylab('% iter with outbreak') +
+      theme(axis.title.y=element_text(margin=margin(0,30,0,0))) +
+      theme(axis.text=element_text(size=12, color='black'),
+            axis.title=element_text(size=14, face="bold", color='black')) +
+      xlab('year') +
+      theme(axis.line = element_blank(),
+            panel.grid.major = element_blank(),
+            panel.grid.minor = element_blank(),
+            panel.border = element_rect(fill=NA, colour='black'),
+            panel.background = element_blank()) +
+      scale_colour_manual(name=NULL, values=c('mean  '='black')) +
+      theme(legend.text.align=0) +
+      theme(legend.position='none')
+
     setProgress(100, message='Updating plots')
 
-    # Put the three plots together:
-    grid.draw(rbind(ggplotGrob(abundPlot), ggplotGrob(infectPlot), ggplotGrob(vaccPlot), size = "last"))
+    # Put the five plots together:
+    grid.draw(rbind(ggplotGrob(abundPlot), 
+                    ggplotGrob(infectPlot), 
+                    ggplotGrob(vaccPlot), 
+                    ggplotGrob(outbreakPlot),
+                    ggplotGrob(probPlot), size = "last"))
+    
   })  # close withProgress
 })  # close renderPlot
 ########################################################################################################################
@@ -1099,15 +1156,23 @@ output$numericalResults <- renderPlot({
   totalHumanDeaths     <- round(sum(apply(resultsMatrix[, 'lifeLoss', ], 1, mean, na.rm=TRUE)), 2)
   totalBudget          <- round(sum(annualBudget[1:simulationYears]), 2)
   totalVaccinations    <- round(sum(apply(resultsMatrix[, 'newlyVaccinated', ], 1, mean, na.rm=TRUE)), 2)
+  
+  daySeq = seq(1, simulationEnd)
+  infective <- resultsMatrix[, 'infective', ]
+  firstDay <- pmax(0, apply(infective, 2, function(x) head(daySeq[x != 0], 1)), na.rm=TRUE)
+  lastDay <- pmax(0, apply(infective, 2, function(x) tail(daySeq[x != 0], 1)), na.rm=TRUE)
+  infTime <- mean(as.numeric(lastDay) - as.numeric(firstDay) + 1)
+
   par(mar = c(0,0,0,0))
   plot(c(0, 1), c(0, 1), ann = F, bty = 'n', type = 'n', xaxt = 'n', yaxt = 'n')
   text(0, 0.93, paste('Averages across all iterations:'), pos=4, cex=2)
   text(0.0, 0.86, paste('mean abundance =', meanAbundance), pos=4, cex=1.5, col='royalblue')
   text(0.0, 0.79, paste('dog-days of infection =', dogDaysOfInfection), pos=4, cex=1.5, col='royalblue')
-  text(0.0, 0.72, paste('cost of infection =', totalCostOfInfection), pos=4, cex=1.5, col='royalblue')
+  text(0.0, 0.72, paste('cost of infection (PEP cost) =', totalCostOfInfection), pos=4, cex=1.5, col='royalblue')
   text(0.0, 0.65, paste('human deaths =', totalHumanDeaths), pos=4, cex=1.5, col='royalblue')
-  text(0.0, 0.58, paste ('management cost =', totalBudget), pos=4, cex=1.5, col='royalblue')
+  text(0.0, 0.58, paste ('management cost (excludes PEP cost) =', totalBudget), pos=4, cex=1.5, col='royalblue')
   text(0.0, 0.51, paste('total vaccinations =', totalVaccinations), pos=4, cex=1.5, col='royalblue')
+  text(0.0, 0.44, paste('consecutive days of disease =', infTime), pos=4, cex=1.5, col='royalblue')
 })  # close renderPlot
 ########################################################################################################################
 
@@ -1125,6 +1190,11 @@ output$downloadData <- downloadHandler(
     write.csv(datasetInput(), file, row.names = FALSE)
   }
 )
+
+observeEvent(input$do, {
+  session$sendCustomMessage(type = 'testmessage',
+                            message = 'Thank you for clicking')
+})
 ########################################################################################################################
 
 })  # close shinyServer

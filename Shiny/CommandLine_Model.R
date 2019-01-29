@@ -127,11 +127,11 @@ contactCost100 <- 8453.7
 
 # input for budget years 1-5    
 annualBudget     <- rep(0, simulationYears)
-annualBudget[1]  <- 40000/5
-annualBudget[2]  <- 40000/5
-annualBudget[3]  <- 40000/5
-annualBudget[4]  <- 40000/5
-annualBudget[5]  <- 40000/5
+annualBudget[1]  <- 5000
+annualBudget[2]  <- 5000
+annualBudget[3]  <- 0
+annualBudget[4]  <- 5000
+annualBudget[5]  <- 0
 
 # inputs for strategy  
 # note: model assumes already sterilized dogs are not re-sterilized. 
@@ -157,9 +157,9 @@ contraJuvFemale   <- 0
 sterPuppyMale     <- 0
 sterPuppyFemale   <- 0
 sterAdultMale     <- 0
-sterAdultFemale   <- 1
+sterAdultFemale   <- 0
 sterJuvMale       <- 0
-sterJuvFemale     <- 1
+sterJuvFemale     <- 0
 euthPuppyMale     <- 0
 euthPuppyFemale   <- 0
 euthAdultMale     <- 0
@@ -893,11 +893,14 @@ for(i in 1:simulationEnd) {
 
 
 ########################################################################################################################
-# Plot abundance over time
+# Build Plots
 plot.new()
-abunMax <- max(resultsMatrix[, 'abundance', ]) * 1.1
-daySeries <- seq(1, simulationEnd)
+abunMax         <- max(resultsMatrix[, 'abundance', ]) * 1.1
+prevMax         <- max(resultsMatrix[, 'infective', ]) * 1.1
+vaccMax         <- max(resultsMatrix[, 'vaccinated', ]) * 1.1
+daySeries       <- seq(1, simulationEnd)
 
+# Construct abundance plot:
 quant0abun   <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.0)
 quant10abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.1)
 quant20abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.2)
@@ -909,7 +912,7 @@ quant70abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.7)
 quant80abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.8)
 quant90abun  <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 0.9)
 quant100abun <- apply(resultsMatrix[, 'abundance', ], 1, quantile, 1.0)
-meanAbun = apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE)
+meaNAbun = apply(resultsMatrix[, 'abundance', ], 1, mean, NA.rm=TRUE)
 
 abundPlot <- ggplot() +
   geom_ribbon(aes(x=daySeries, ymax=quant100abun, ymin=quant0abun, fill='full range  ')) +
@@ -918,14 +921,15 @@ abundPlot <- ggplot() +
   geom_ribbon(aes(x=daySeries, ymax=quant70abun, ymin=quant30abun, fill='percentile 30 to 70  ')) +
   geom_ribbon(aes(x=daySeries, ymax=quant60abun, ymin=quant40abun, fill='percentile 40 to 60  ')) +
   geom_line(aes(daySeries, quant50abun, colour = 'median  ')) +
-  geom_line(aes(daySeries, meanAbun, colour = 'mean  '), size=1.0) +
+  geom_line(aes(daySeries, meaNAbun, colour = 'mean  '), size=1.0) +
   scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
                      labels = c('1', '2', '3', '4', '5')) +
   scale_y_continuous(limits=c(0, abunMax), expand = c(0, 0)) +
   ylab('abundance') +
-  theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
-  theme(axis.text=element_text(size=26, color='black'), 
-        axis.title=element_text(size=26, face="bold", color='black')) +
+  
+  theme(axis.title.y=element_text(margin=margin(0,30,0,0))) +
+  #theme(axis.text=element_text(size=12, color='black'),
+  #      axis.title=element_text(size=14, face="bold", color='black')) +
   xlab('') +
   theme(axis.line = element_blank(),
         panel.grid.major = element_blank(),
@@ -934,22 +938,15 @@ abundPlot <- ggplot() +
         panel.background = element_blank()) +
   scale_colour_manual(name=NULL, values=c('median  '='#1B4F72',
                                           'mean  '='black')) +
-  scale_fill_manual(name=NULL, values=c('full range  '='#5DADE2', 
-                                        'percentile 10 to 90  '='#3498DB', 
-                                        'percentile 20 to 80  '='#2E86C1', 
-                                        'percentile 30 to 70  '='#2874A6', 
+  scale_fill_manual(name=NULL, values=c('full range  '='#5DADE2',
+                                        'percentile 10 to 90  '='#3498DB',
+                                        'percentile 20 to 80  '='#2E86C1',
+                                        'percentile 30 to 70  '='#2874A6',
                                         'percentile 40 to 60  '='#21618C')) +
-  theme(legend.text.align=0) + 
-  theme(legend.position='none') 
-########################################################################################################################
+  theme(legend.text.align=0) +
+  theme(legend.position='top')
 
-
-########################################################################################################################
-# Plot disease prevalence over time
-
-daySeries <- seq(1, simulationEnd)
-prevMax <- max(resultsMatrix[, 'infective', ]) * 1.1
-
+# Construct the disease prevalence plot:
 quant0inf   <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.0)
 quant10inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.1)
 quant20inf  <- apply(resultsMatrix[, 'infective', ], 1, quantile, 0.2)
@@ -974,10 +971,10 @@ infectPlot <- ggplot() +
   scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
                      labels = c('1', '2', '3', '4', '5')) +
   scale_y_continuous(limits=c(0, prevMax), expand = c(0, 0)) +
-  ylab('disease prevalence') +
-  theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
-  theme(axis.text=element_text(size=26, color='black'), 
-        axis.title=element_text(size=26, face="bold", color='black')) +
+  ylab('count of inf dogs') +
+  theme(axis.title.y=element_text(margin=margin(0,30,0,0))) +
+  #theme(axis.text=element_text(size=12, color='black'),
+  #      axis.title=element_text(size=14, face="bold", color='black')) +
   xlab('') +
   theme(axis.line = element_blank(),
         panel.grid.major = element_blank(),
@@ -986,22 +983,15 @@ infectPlot <- ggplot() +
         panel.background = element_blank()) +
   scale_colour_manual(name=NULL, values=c('median  '='#1B4F72',
                                           'mean  '='black')) +
-  scale_fill_manual(name=NULL, values=c('full range  '='#5DADE2', 
-                                        'percentile 10 to 90  '='#3498DB', 
-                                        'percentile 20 to 80  '='#2E86C1', 
-                                        'percentile 30 to 70  '='#2874A6', 
+  scale_fill_manual(name=NULL, values=c('full range  '='#5DADE2',
+                                        'percentile 10 to 90  '='#3498DB',
+                                        'percentile 20 to 80  '='#2E86C1',
+                                        'percentile 30 to 70  '='#2874A6',
                                         'percentile 40 to 60  '='#21618C')) +
-  theme(legend.text.align=0) + 
-  theme(legend.position='none') 
-########################################################################################################################
+  theme(legend.text.align=0) +
+  theme(legend.position='none')
 
-
-########################################################################################################################
-# Plot vaccinated dogs over time
-
-vaccMax <- max(resultsMatrix[, 'vaccinated', ]) * 1.1
-daySeries <- seq(1, simulationEnd)
-
+# Construct the vaccination plot:
 quant0vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.0)
 quant10vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.1)
 quant20vac  <- apply(resultsMatrix[, 'vaccinated', ], 1, quantile, 0.2)
@@ -1026,11 +1016,11 @@ vaccPlot <- ggplot() +
   scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
                      labels = c('1', '2', '3', '4', '5')) +
   scale_y_continuous(limits=c(0, vaccMax), expand = c(0, 0)) +
-  ylab('vacc dogs in pop') +
-  theme(axis.title.y=element_text(margin=margin(0,10,0,0))) +
-  theme(axis.text=element_text(size=26, color='black'), 
-        axis.title=element_text(size=26, face="bold", color='black')) +
-  xlab('year') +
+  ylab('count of vacc dogs') +
+  theme(axis.title.y=element_text(margin=margin(0,30,0,0))) +
+  #theme(axis.text=element_text(size=12, color='black'),
+  #      axis.title=element_text(size=14, face="bold", color='black')) +
+  xlab('') + 
   theme(axis.line = element_blank(),
         panel.grid.major = element_blank(),
         panel.grid.minor = element_blank(),
@@ -1038,45 +1028,93 @@ vaccPlot <- ggplot() +
         panel.background = element_blank()) +
   scale_colour_manual(name=NULL, values=c('median  '='#1B4F72',
                                           'mean  '='black')) +
-  scale_fill_manual(name=NULL, values=c('full range  '='#5DADE2', 
-                                        'percentile 10 to 90  '='#3498DB', 
-                                        'percentile 20 to 80  '='#2E86C1', 
-                                        'percentile 30 to 70  '='#2874A6', 
+  scale_fill_manual(name=NULL, values=c('full range  '='#5DADE2',
+                                        'percentile 10 to 90  '='#3498DB',
+                                        'percentile 20 to 80  '='#2E86C1',
+                                        'percentile 30 to 70  '='#2874A6',
                                         'percentile 40 to 60  '='#21618C')) +
   theme(legend.text.align=0) +
-  theme(legend.text=element_text(size=26)) +
-  theme(legend.position='bottom') 
+  theme(legend.position='none')
+
+# Construct the outbreak size plot:
+infective <- resultsMatrix[, 'infective', ]
+totalInf <- rowSums(infective)
+iterWithInf <- rowSums(infective > 0)
+meanOutbreakSize <- totalInf / iterWithInf
+meanOutbreakSize[meanOutbreakSize == 'NaN'] <- 0
+
+outbreakPlot <- ggplot() +
+  geom_line(aes(daySeries, meanOutbreakSize, colour = 'mean  '), size=1.0) +
+  scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
+                     labels = c('1', '2', '3', '4', '5')) +
+  scale_y_continuous(limits=c(0, prevMax), expand = c(0, 0)) +
+  ylab('mean outbreak size') +
+  theme(axis.title.y=element_text(margin=margin(0,30,0,0))) +
+  #theme(axis.text=element_text(size=12, color='black'),
+  #      axis.title=element_text(size=14, face="bold", color='black')) +
+  xlab('') +
+  theme(axis.line = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(fill=NA, colour='black'),
+        panel.background = element_blank()) +
+  scale_colour_manual(name=NULL, values=c('mean  '='black')) +
+  theme(legend.text.align=0) +
+  theme(legend.position='none')
+
+# construct the outbreak probability plot
+infective <- resultsMatrix[, 'infective', ] 
+outbreakProb <- rowSums(infective > 1) / iterations
+probPlot <- ggplot() +
+  geom_line(aes(daySeries, outbreakProb, colour = 'mean  '), size=1.0) +
+  scale_x_continuous(limits=c(0, simulationEnd), expand = c(0, 25), breaks=c(365, 730, 1095, 1460, 1825),
+                     labels = c('1', '2', '3', '4', '5')) +
+  scale_y_continuous(limits=c(0, 1), expand = c(0, 0)) +
+  ylab('% iter with outbreak') +
+  theme(axis.title.y=element_text(margin=margin(0,30,0,0))) +
+  #theme(axis.text=element_text(size=12, color='black'),
+  #      axis.title=element_text(size=14, face="bold", color='black')) +
+  xlab('year') +
+  theme(axis.line = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank(),
+        panel.border = element_rect(fill=NA, colour='black'),
+        panel.background = element_blank()) +
+  scale_colour_manual(name=NULL, values=c('mean  '='black')) +
+  theme(legend.text.align=0) +
+  theme(legend.position='none')
+
+# Put the five plots together:
+grid.draw(rbind(ggplotGrob(abundPlot), 
+                ggplotGrob(infectPlot), 
+                ggplotGrob(vaccPlot), 
+                ggplotGrob(outbreakPlot),
+                ggplotGrob(probPlot), size = "last"))
 ########################################################################################################################
 
-grid.draw(rbind(ggplotGrob(abundPlot), ggplotGrob(infectPlot), ggplotGrob(vaccPlot), size='last'))
-
-csv_data = data.frame(cbind(daySeries, meanAbun, meanInf, meanVac))
 
 ########################################################################################################################
 # get some key results
-#resultsMatrix[day, results series, iteration]
-dogDaysOfInfection   <- sum(apply(resultsMatrix[, 'infective', ], 1, mean, na.rm=TRUE))
-meanAbundance        <- mean(apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE))
-totalCostOfInfection <- sum(apply(resultsMatrix[, 'PEPs', ], 1, mean, na.rm=TRUE))*costPerPEP
-totalHumanDeaths     <- sum(apply(resultsMatrix[, 'lifeLoss', ], 1, mean, na.rm=TRUE))
-totalBudget          <- sum(annualBudget[1:simulationYears])
-totalVaccinations    <- sum(apply(resultsMatrix[, 'newlyVaccinated', ], 1, mean, na.rm=TRUE))
-vaccPercentage       <- max(apply(resultsMatrix[, 'vaccinated', ] / resultsMatrix[, 'abundance', ], 
-                                  1, mean, na.rm=TRUE))
+dogDaysOfInfection   <- round(sum(apply((resultsMatrix[, 'infective', ]), 1, mean, na.rm=TRUE)), 2)
+meanAbundance        <- round(mean(apply(resultsMatrix[, 'abundance', ], 1, mean, na.rm=TRUE)), 2)
+totalCostOfInfection <- round(sum(apply(resultsMatrix[, 'PEPs', ], 1, mean, na.rm=TRUE))*costPerPEP, 2)
+totalHumanDeaths     <- round(sum(apply(resultsMatrix[, 'lifeLoss', ], 1, mean, na.rm=TRUE)), 2)
+totalBudget          <- round(sum(annualBudget[1:simulationYears]), 2)
+totalVaccinations    <- round(sum(apply(resultsMatrix[, 'newlyVaccinated', ], 1, mean, na.rm=TRUE)), 2)
 
+daySeq = seq(1, simulationEnd)
+infective <- resultsMatrix[, 'infective', ]
+firstDay <- pmax(0, apply(infective, 2, function(x) head(daySeq[x != 0], 1)), na.rm=TRUE)
+lastDay <- pmax(0, apply(infective, 2, function(x) tail(daySeq[x != 0], 1)), na.rm=TRUE)
+infTime <- mean(as.numeric(lastDay) - as.numeric(firstDay) + 1)
 
-# resultsMatrix[, 'infective', ] is a matrix with rows=days and columns=iterations
-# get max prevalence by iteration:
-# meanAbundance
-maxPrev <- apply(resultsMatrix[, 'infective', ], 2, max, na.rm=TRUE)
-round(dogDaysOfInfection, 2)
-#mean(maxPrev)
-round(sum(maxPrev > 1)/iterations * 100)
-round(mean(maxPrev[maxPrev > 1]), 2)
-#totalVaccinations
-round(vaccPercentage * 100)
-round(totalBudget + totalCostOfInfection)
-#totalHumanDeaths
+print(dogDaysOfInfection)
+print(meanAbundance)
+print(totalCostOfInfection)
+print(totalHumanDeaths)
+print(totalBudget)
+print(totalVaccinations)
+print(infTime)
 
 #install.packages("beepr")
 #library(beepr)
