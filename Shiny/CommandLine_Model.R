@@ -91,8 +91,6 @@ transmissionParam     <- 2.15
 bitesPerRabidMean <- transmissionParam
 bitesPerRabidShape    <- 1.33
 probInfectionFromBite <- 0.49
-timeLimitExposed      <- 22 
-timeLimitInfective    <- 3
 survivalProb          <- 0
 
 # inputs for benefits of management
@@ -265,8 +263,8 @@ traitList <- c('age', 'puppy', 'adult','female',
                'sterilized', 'contracepted', 'timeContra',
                'vaccinated', 'timeVacc',
                'boosted', 'contacted', 'contactCost',
-               'exposed', 'timeExposed',
-               'infective', 'timeInfective',
+               'exposed', 'timeExposed', 'timeLimitExposed',
+               'infective', 'timeInfective', 'timeLimitInfective',
                'immune', 'month')
 
 # A list of results that will be tracked:
@@ -362,6 +360,8 @@ InitialPopulation <- function() {
   popMatrix[popMatrix[, 'age'] <= maxPuppyAge, 'puppy'] <- 1
   popMatrix[, 'month'] <- 1
   popMatrix[, 'contactCost'] <- sample(marginalCost, nrow(popMatrix), replace=TRUE)
+  popMatrix[, 'timeLimitExposed'] <- sample(seq(15, 25), nrow(popMatrix), replace=TRUE)
+  popMatrix[, 'timeLimitInfective'] <- sample(seq(2, 6), nrow(popMatrix), replace=TRUE)
   
   return(popMatrix)
 }
@@ -426,6 +426,8 @@ ReproductionFunction <- function(d) {
                                                           femalePupProb))
   newDogMatrix[, 'puppy'] <- 1
   newDogMatrix[, 'contactCost'] <- sample(marginalCost, nrow(newDogMatrix), replace=TRUE)
+  newDogMatrix[, 'timeLimitExposed'] <- sample(seq(15, 25), nrow(newDogMatrix), replace=TRUE)
+  newDogMatrix[, 'timeLimitInfective'] <- sample(seq(2, 6), nrow(newDogMatrix), replace=TRUE)
   popMatrix <- rbind(popMatrix, newDogMatrix)
   
   return(popMatrix)
@@ -455,6 +457,8 @@ ImmigrationFunction <- function() {
   newDogMatrix[newDogMatrix[, 'age'] > maxJuvAge, 'adult'] <- 1
   newDogMatrix[newDogMatrix[, 'age'] <= maxPuppyAge, 'puppy'] <- 1
   newDogMatrix[, 'contactCost'] <- sample(marginalCost, nrow(newDogMatrix), replace=TRUE)
+  newDogMatrix[, 'timeLimitExposed'] <- sample(seq(15, 25), nrow(newDogMatrix), replace=TRUE)
+  newDogMatrix[, 'timeLimitInfective'] <- sample(seq(2, 6), nrow(newDogMatrix), replace=TRUE)
   popMatrix <- rbind(popMatrix, newDogMatrix)
   
   return(popMatrix)
@@ -481,9 +485,16 @@ DiseaseSpreadFunction <- function() {
   }
   
   # Endogenous transmission:
-  infectiveDogs <- sum(popMatrix[, 'infective'])
-  dailyRabidBites <- sum(rnbinom(infectiveDogs, size=(bitesPerRabidShape/timeLimitInfective), 
-                                 mu=bitesPerRabidMean/timeLimitInfective))
+  infectiveTimes <- popMatrix[popMatrix[, 'infective'] == 1, 'timeLimitInfective']
+  if (length(infectiveTimes) > 0) { 
+    size <- bitesPerRabidShape / infectiveTimes
+    mu <- bitesPerRabidMean / infectiveTimes
+    biteMatrix <- mapply(function(x, y){rnbinom(size=x, mu=y, n=1)}, x=size, y=mu)
+    dailyRabidBites <- sum(biteMatrix)
+  } else{
+    dailyRabidBites <- 0
+  }
+  
   # Now we draw dogs randomly from population to be bitten:
   rowsBitten <- unique(sample(seq(1:nrow(popMatrix)), dailyRabidBites, replace=TRUE))
   bitten <- rep(0, nrow(popMatrix))
@@ -509,13 +520,13 @@ DiseaseProgressionFunction <- function() {
   # Purpose:   Induces transition from exposed and infective states.
   
   # Transition exposed to infective:
-  newInfective <- popMatrix[, 'exposed'] == 1 & popMatrix[, 'timeExposed'] > timeLimitExposed
+  newInfective <- popMatrix[, 'exposed'] == 1 & popMatrix[, 'timeExposed'] > popMatrix[, 'timeLimitExposed']
   popMatrix[newInfective, 'exposed']       <- 0
   popMatrix[newInfective, 'infective']     <- 1
   popMatrix[newInfective, 'timeInfective'] <- 0
   
   # Transition infective to death or immune:
-  newRecovered <- popMatrix[, 'infective'] == 1 & popMatrix[, 'timeInfective'] > timeLimitInfective
+  newRecovered <- popMatrix[, 'infective'] == 1 & popMatrix[, 'timeInfective'] > popMatrix[, 'timeLimitInfective']
   recoverDraw <- runif(length(newRecovered))
   recover <- newRecovered[recoverDraw < survivalProb]
   death <- newRecovered[recoverDraw >= survivalProb]
