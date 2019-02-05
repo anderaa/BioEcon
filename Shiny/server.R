@@ -110,6 +110,10 @@ getResultsMatrix <- eventReactive(input$run, {
   bitesPerRabidMean     <- input$transmissionParam
   bitesPerRabidShape    <- 1.33
   probInfectionFromBite <- 0.49
+  exposedTimeShape      <- 1.08549138
+  exposedTimeRate       <- 0.04919551
+  infectiveTimeShape    <- 2.831788
+  infectiveTimeRate     <- 0.9193612
 
   # Inputs for benefits of management:
   bitesPerNonRabid     <- input$bitesPerNonRabid
@@ -366,8 +370,8 @@ getResultsMatrix <- eventReactive(input$run, {
     popMatrix[popMatrix[, 'age'] <= maxPuppyAge, 'puppy'] <- 1
     popMatrix[, 'month'] <- 1
     popMatrix[, 'contactCost'] <- sample(marginalCost, nrow(popMatrix), replace=TRUE)
-    popMatrix[, 'timeLimitExposed'] <- sample(seq(15, 25), nrow(popMatrix), replace=TRUE)
-    popMatrix[, 'timeLimitInfective'] <- sample(seq(2, 6), nrow(popMatrix), replace=TRUE)
+    popMatrix[, 'timeLimitExposed'] <- rgamma(nrow(popMatrix), shape=exposedTimeShape, rate=exposedTimeRate)
+    popMatrix[, 'timeLimitInfective'] <- rgamma(nrow(popMatrix), shape=infectiveTimeShape, rate=infectiveTimeRate)
     
     return(popMatrix)
   }
@@ -432,8 +436,8 @@ getResultsMatrix <- eventReactive(input$run, {
                                                             femalePupProb))
     newDogMatrix[, 'puppy'] <- 1
     newDogMatrix[, 'contactCost'] <- sample(marginalCost, nrow(newDogMatrix), replace=TRUE)
-    newDogMatrix[, 'timeLimitExposed'] <- sample(seq(15, 25), nrow(newDogMatrix), replace=TRUE)
-    newDogMatrix[, 'timeLimitInfective'] <- sample(seq(2, 6), nrow(newDogMatrix), replace=TRUE)
+    newDogMatrix[, 'timeLimitExposed'] <- rgamma(nrow(newDogMatrix), shape=exposedTimeShape, rate=exposedTimeRate)
+    newDogMatrix[, 'timeLimitInfective'] <- rgamma(nrow(newDogMatrix), shape=infectiveTimeShape, rate=infectiveTimeRate)
     popMatrix <- rbind(popMatrix, newDogMatrix)
 
     return(popMatrix)
@@ -463,8 +467,8 @@ getResultsMatrix <- eventReactive(input$run, {
     newDogMatrix[newDogMatrix[, 'age'] > maxJuvAge, 'adult'] <- 1
     newDogMatrix[newDogMatrix[, 'age'] <= maxPuppyAge, 'puppy'] <- 1
     newDogMatrix[, 'contactCost'] <- sample(marginalCost, nrow(newDogMatrix), replace=TRUE)
-    newDogMatrix[, 'timeLimitExposed'] <- sample(seq(15, 25), nrow(newDogMatrix), replace=TRUE)
-    newDogMatrix[, 'timeLimitInfective'] <- sample(seq(2, 6), nrow(newDogMatrix), replace=TRUE)
+    newDogMatrix[, 'timeLimitExposed'] <- rgamma(nrow(newDogMatrix), shape=exposedTimeShape, rate=exposedTimeRate)
+    newDogMatrix[, 'timeLimitInfective'] <- rgamma(nrow(newDogMatrix), shape=infectiveTimeShape, rate=infectiveTimeRate)
     popMatrix <- rbind(popMatrix, newDogMatrix)
 
     return(popMatrix)
@@ -496,7 +500,7 @@ getResultsMatrix <- eventReactive(input$run, {
       size <- bitesPerRabidShape / infectiveTimes
       mu <- bitesPerRabidMean / infectiveTimes
       biteMatrix <- mapply(function(x, y){rnbinom(size=x, mu=y, n=1)}, x=size, y=mu)
-      dailyRabidBites <- sum(biteMatrix)
+      dailyRabidBites <- round(sum(biteMatrix))
     } else{
       dailyRabidBites <- 0
     }

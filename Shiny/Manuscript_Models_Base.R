@@ -78,8 +78,8 @@ InitialPopulation <- function() {
   popMatrix[popMatrix[, 'age'] <= maxPuppyAge, 'puppy'] <- 1
   popMatrix[, 'month'] <- 1
   popMatrix[, 'contactCost'] <- sample(marginalCost, nrow(popMatrix), replace=TRUE)
-  popMatrix[, 'timeLimitExposed'] <- sample(seq(15, 25), nrow(popMatrix), replace=TRUE)
-  popMatrix[, 'timeLimitInfective'] <- sample(seq(2, 6), nrow(popMatrix), replace=TRUE)
+  popMatrix[, 'timeLimitExposed'] <- rgamma(nrow(popMatrix), shape=exposedTimeShape, rate=exposedTimeRate)
+  popMatrix[, 'timeLimitInfective'] <- rgamma(nrow(popMatrix), shape=infectiveTimeShape, rate=infectiveTimeRate)
   
   return(popMatrix)
 }
@@ -144,8 +144,8 @@ ReproductionFunction <- function(d) {
                                                           femalePupProb))
   newDogMatrix[, 'puppy'] <- 1
   newDogMatrix[, 'contactCost'] <- sample(marginalCost, nrow(newDogMatrix), replace=TRUE)
-  newDogMatrix[, 'timeLimitExposed'] <- sample(seq(15, 25), nrow(newDogMatrix), replace=TRUE)
-  newDogMatrix[, 'timeLimitInfective'] <- sample(seq(2, 6), nrow(newDogMatrix), replace=TRUE)
+  newDogMatrix[, 'timeLimitExposed'] <- rgamma(nrow(newDogMatrix), shape=exposedTimeShape, rate=exposedTimeRate)
+  newDogMatrix[, 'timeLimitInfective'] <- rgamma(nrow(newDogMatrix), shape=infectiveTimeShape, rate=infectiveTimeRate)
   popMatrix <- rbind(popMatrix, newDogMatrix)
   
   return(popMatrix)
@@ -175,8 +175,8 @@ ImmigrationFunction <- function() {
   newDogMatrix[newDogMatrix[, 'age'] > maxJuvAge, 'adult'] <- 1
   newDogMatrix[newDogMatrix[, 'age'] <= maxPuppyAge, 'puppy'] <- 1
   newDogMatrix[, 'contactCost'] <- sample(marginalCost, nrow(newDogMatrix), replace=TRUE)
-  newDogMatrix[, 'timeLimitExposed'] <- sample(seq(15, 25), nrow(newDogMatrix), replace=TRUE)
-  newDogMatrix[, 'timeLimitInfective'] <- sample(seq(2, 6), nrow(newDogMatrix), replace=TRUE)
+  newDogMatrix[, 'timeLimitExposed'] <- rgamma(nrow(newDogMatrix), shape=exposedTimeShape, rate=exposedTimeRate)
+  newDogMatrix[, 'timeLimitInfective'] <- rgamma(nrow(newDogMatrix), shape=infectiveTimeShape, rate=infectiveTimeRate)
   popMatrix <- rbind(popMatrix, newDogMatrix)
   
   return(popMatrix)
@@ -634,6 +634,10 @@ for(k in seq(1, nrow(parameter_df))) {
   bitesPerRabidShape    <- 1.33
   probInfectionFromBite <- 0.49
   survivalProb          <- 0
+  exposedTimeShape      <- 1.08549138
+  exposedTimeRate       <- 0.04919551
+  infectiveTimeShape    <- 2.831788
+  infectiveTimeRate     <- 0.9193612
   
   # inputs for benefits of management
   bitesPerNonRabid     <- 0.00017/3 
