@@ -98,8 +98,8 @@ infectiveTimeShape    <- 2.831788
 infectiveTimeRate     <- 0.9193612
 
 # inputs for benefits of management
-bitesPerNonRabid     <- 0.00017/3 
-bitesPerRabid        <- 0.06756/3 
+bitesPerNonRabid     <- 0.00006 
+bitesPerRabid        <- 0.02252 
 PEPperNonRabidBite   <- 0.991
 PEPperRabidBite      <- 0.991
 costPerPEP           <- 754.92
