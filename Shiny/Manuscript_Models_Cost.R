@@ -582,7 +582,7 @@ for(k in seq(1, nrow(parameter_df))) {
   # inputs for simulation
   simulationYears <- 5
   simulationEnd   <- 365 * simulationYears
-  iterations      <- 5
+  iterations      <- 5000
   
   # inputs for initial population
   initialPopSize    <- 463
