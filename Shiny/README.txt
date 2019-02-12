@@ -1,7 +1,7 @@
 
 This is the directory of the Shiny project.
 
-There is also a command line model in this directory.
+There is also a script-based model in this directory.
 
 rsconnect and www are directories used by the Shiny app.
 
