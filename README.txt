@@ -1,5 +1,3 @@
-This is the main directory of the BioEcon project.
-
 The current version of the model can be accessed from www.bioeconmodel.com
 
 Contents:
