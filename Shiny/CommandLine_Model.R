@@ -40,7 +40,7 @@ library(beepr)
 # inputs for simulation
 simulationYears <- 5
 simulationEnd   <- 365 * simulationYears
-iterations      <- 5
+iterations      <- 5000
 
 # inputs for initial population
 initialPopSize    <- 463
@@ -129,11 +129,11 @@ contactCost100 <- 8453.7
 
 # input for budget years 1-5    
 annualBudget     <- rep(0, simulationYears)
-annualBudget[1]  <- 5000
-annualBudget[2]  <- 5000
-annualBudget[3]  <- 0
-annualBudget[4]  <- 5000
-annualBudget[5]  <- 0
+annualBudget[1]  <- 40000/5
+annualBudget[2]  <- 40000/5
+annualBudget[3]  <- 40000/5
+annualBudget[4]  <- 40000/5
+annualBudget[5]  <- 40000/5
 
 # inputs for strategy  
 # note: model assumes already sterilized dogs are not re-sterilized. 
@@ -159,9 +159,9 @@ contraJuvFemale   <- 0
 sterPuppyMale     <- 0
 sterPuppyFemale   <- 0
 sterAdultMale     <- 0
-sterAdultFemale   <- 0
+sterAdultFemale   <- 1
 sterJuvMale       <- 0
-sterJuvFemale     <- 0
+sterJuvFemale     <- 1
 euthPuppyMale     <- 0
 euthPuppyFemale   <- 0
 euthAdultMale     <- 0
