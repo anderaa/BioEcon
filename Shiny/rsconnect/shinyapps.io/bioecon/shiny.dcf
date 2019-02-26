@@ -2,7 +2,8 @@ name: shiny
 title:
 account: bioecon
 server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
 appId: 556415
-bundleId: 1685745
+bundleId: 1885601
 url: https://bioecon.shinyapps.io/shiny/
-when: 1541526427.15719
+when: 1550613936.30438
