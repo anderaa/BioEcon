@@ -1,8 +1,6 @@
 
 This is the directory of the Shiny project.
 
-There is also a script-based model in this directory.
-
 rsconnect and www are directories used by the Shiny app.
 
 To try shiny on local machine:
@@ -25,5 +23,3 @@ To deploy:
 			        token='',
 			        secret='')
    > rsconnect::deployApp(getwd())
-
-
