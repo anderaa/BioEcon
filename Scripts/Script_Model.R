@@ -40,7 +40,7 @@ library(beepr)
 # inputs for simulation
 simulationYears <- 5
 simulationEnd   <- 365 * simulationYears
-iterations      <- 5000
+iterations      <- 10
 
 # inputs for initial population
 initialPopSize    <- 463
@@ -91,7 +91,7 @@ transmissionParam     <- 2.15
 bitesPerRabidMean <- transmissionParam
 bitesPerRabidShape    <- 1.33
 probInfectionFromBite <- 0.49
-survivalProb          <- 0
+survivalProb          <- 0.0
 exposedTimeShape      <- 1.08549138
 exposedTimeRate       <- 0.04919551
 infectiveTimeShape    <- 2.831788
@@ -129,11 +129,11 @@ contactCost100 <- 8453.7
 
 # input for budget years 1-5    
 annualBudget     <- rep(0, simulationYears)
-annualBudget[1]  <- 40000/5
-annualBudget[2]  <- 40000/5
-annualBudget[3]  <- 40000/5
-annualBudget[4]  <- 40000/5
-annualBudget[5]  <- 40000/5
+annualBudget[1]  <- 0/5
+annualBudget[2]  <- 0/5
+annualBudget[3]  <- 0/5
+annualBudget[4]  <- 0/5
+annualBudget[5]  <- 0/5
 
 # inputs for strategy  
 # note: model assumes already sterilized dogs are not re-sterilized. 
@@ -525,18 +525,21 @@ DiseaseProgressionFunction <- function() {
   
   # Transition exposed to infective:
   newInfective <- popMatrix[, 'exposed'] == 1 & popMatrix[, 'timeExposed'] > popMatrix[, 'timeLimitExposed']
-  popMatrix[newInfective, 'exposed']       <- 0
-  popMatrix[newInfective, 'infective']     <- 1
-  popMatrix[newInfective, 'timeInfective'] <- 0
-  
-  # Transition infective to death or immune:
-  newRecovered <- popMatrix[, 'infective'] == 1 & popMatrix[, 'timeInfective'] > popMatrix[, 'timeLimitInfective']
-  recoverDraw <- runif(length(newRecovered))
-  recover <- newRecovered[recoverDraw < survivalProb]
-  death <- newRecovered[recoverDraw >= survivalProb]
-  popMatrix[recover, 'infective'] <- 0
-  popMatrix[recover, 'immune']    <- 1
-  popMatrix <- popMatrix[!death, , drop=FALSE]
+  recoverDraw <- runif(length(newInfective))
+  # If a dog is both leaving exposed state and recovering, it gets a TRUE
+  recover <- newInfective & recoverDraw < survivalProb
+  # if a dog is both leaving the exposed state and moving to infective, it gets a TRUE
+  infective <- newInfective & recoverDraw >= survivalProb
+  popMatrix[infective, 'exposed']       <- 0
+  popMatrix[infective, 'infective']     <- 1
+  popMatrix[infective, 'timeInfective'] <- 0
+  popMatrix[recover, 'exposed']         <- 0
+  popMatrix[recover, 'immune']          <- 1
+
+  # Transition infective to death:
+  newDead <- popMatrix[, 'infective'] == 1 & popMatrix[, 'timeInfective'] > popMatrix[, 'timeLimitInfective']
+  # Dog gets a TRUE if leaving infective, keep dogs with a FALSE
+  popMatrix <- popMatrix[!newDead, , drop=FALSE]
   
   return(popMatrix)
 }
