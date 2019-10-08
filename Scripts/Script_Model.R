@@ -522,7 +522,7 @@ DiseaseProgressionFunction <- function() {
   # Arguments: None.
   # Return:    An updated population matrix.
   # Purpose:   Induces transition from exposed and infective states.
-  
+
   # Transition exposed to infective:
   newInfective <- popMatrix[, 'exposed'] == 1 & popMatrix[, 'timeExposed'] > popMatrix[, 'timeLimitExposed']
   recoverDraw <- runif(length(newInfective))
@@ -540,7 +540,7 @@ DiseaseProgressionFunction <- function() {
   newDead <- popMatrix[, 'infective'] == 1 & popMatrix[, 'timeInfective'] > popMatrix[, 'timeLimitInfective']
   # Dog gets a TRUE if leaving infective, keep dogs with a FALSE
   popMatrix <- popMatrix[!newDead, , drop=FALSE]
-  
+
   return(popMatrix)
 }
 ########################################################################################################################
