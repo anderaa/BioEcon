@@ -3,6 +3,7 @@ Misc/
 Manuscript/
 
 # History files
+Shiny/.Rhistory
 .Rhistory
 .Rapp.history
 
